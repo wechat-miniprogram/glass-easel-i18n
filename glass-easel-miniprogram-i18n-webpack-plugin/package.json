@@ -1,0 +1,24 @@
+{
+  "name": "glass-easel-miniprogram-i18n-webpack-plugin",
+  "description": "The webpack plugin of the glass-easel-i18n project (working with glass-easel-miniprogram-webpack-plugin)",
+  "version": "0.4.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wechat-miniprogram/glass-easel-i18n.git"
+  },
+  "keywords": [
+    "glass-easel"
+  ],
+  "author": "wechat-miniprogram",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wechat-miniprogram/glass-easel-i18n/issues"
+  },
+  "homepage": "https://github.com/wechat-miniprogram/glass-easel-i18n",
+  "main": "index.js",
+  "scripts": {},
+  "peerDependencies": {
+    "webpack": "^5.85.0"
+  },
+  "dependencies": {}
+}

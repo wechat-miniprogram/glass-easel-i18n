@@ -1,0 +1,19 @@
+[package]
+name = "glass-easel-i18n"
+version = "0.4.0"
+authors = ["LastLeaf <bqfu@163.com>"]
+description = "Non-invasive I18n Support for glass-easel"
+license = "MIT"
+documentation = "https://github.com/wechat-miniprogram/glass-easel-i18n"
+repository = "https://github.com/wechat-miniprogram/glass-easel-i18n"
+homepage = "https://github.com/wechat-miniprogram/glass-easel-i18n"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib", "staticlib"]
+
+[dependencies]
+wasm-bindgen = "0.2.79"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
