@@ -1,4 +1,4 @@
-use std::{path::PathBuf, process::ExitCode};
+use std::{fs, path::PathBuf, process::ExitCode};
 
 use clap::{Parser, Subcommand};
 use glass_easel_i18n::*;
@@ -41,6 +41,10 @@ fn main() -> ExitCode {
             match compile(file_name, &source) {
                 Ok(r) => {
                     println!("{}", r.output);
+                    match fs::write("output.wxml", r.output) {
+                        Ok(()) => println!("output success"),
+                        Err(err) => println!("output fail:{}", err),
+                    }
                 }
                 Err(err) => {
                     eprintln!("{}", err);

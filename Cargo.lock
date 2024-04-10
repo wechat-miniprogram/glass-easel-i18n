@@ -373,6 +373,7 @@ name = "glass-easel-i18n"
 version = "0.4.0"
 dependencies = [
  "clap 4.5.4",
+ "compact_str",
  "glass-easel-template-compiler",
  "serde",
  "toml 0.8.12",
