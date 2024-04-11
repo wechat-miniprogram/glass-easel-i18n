@@ -16,9 +16,17 @@
   },
   "homepage": "https://github.com/wechat-miniprogram/glass-easel-i18n",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "build": "tsc -p ."
+  },
   "peerDependencies": {
     "webpack": "^5.85.0"
   },
-  "dependencies": {}
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "toml": "^3.0.0",
+    "glass-easel-i18n": "../glass-easel-i18n/pkg-nodejs"
+  }
 }

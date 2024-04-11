@@ -33,7 +33,7 @@ impl JsCompileResult {
 }
 
 #[wasm_bindgen(js_name = "compile")]
-pub fn js_compile(path: &str, source: &str) -> JsCompileResult {
-    let r = compile(path, source);
+pub fn js_compile(path: &str, source: &str, trans_source: &str) -> JsCompileResult {
+    let r = compile(path, source, trans_source);
     JsCompileResult(r)
 }

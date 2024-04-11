@@ -8,7 +8,6 @@ use glass_easel_template_compiler::{
 use serde::Deserialize;
 use std::{cell::RefCell, collections::HashMap, ops::Range};
 use toml;
-
 mod js_bindings;
 
 pub struct CompiledTemplate {
@@ -22,7 +21,8 @@ pub struct TransContent {
     pub map: HashMap<String, HashMap<String, String>>,
 }
 
-pub fn compile(path: &str, source: &str) -> Result<CompiledTemplate, String> {
+pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledTemplate, String> {
+    println!("{}", path);
     // parse the template
     let (mut template, parse_state) = parse(path, source);
     for warning in parse_state.warnings() {
@@ -31,37 +31,39 @@ pub fn compile(path: &str, source: &str) -> Result<CompiledTemplate, String> {
         }
     }
 
-    let mut trans_content: Option<TransContent> = None;
+    let trans_content: TransContent = toml::from_str(&trans_source).unwrap();
+    println!("{:#?}", trans_content.map);
 
     // transform the template to support i18n
     println!("template:{:#?}", template.content);
-    for node in &template.content {
-        match node {
-            Node::UnknownMetaTag(tag, range) => {
-                if tag.starts_with("I18N") {
-                    if let Some(start) = tag.find("locale-files=") {
-                        let start = start + "locale-files=".len();
-                        let end = tag[start..].find(" ").unwrap_or_else(|| tag.len());
-                        let locale_file_name =
-                            format!("{}.toml", &tag[start..end].trim_matches('\"'));
-                        let trans_content_str = match std::fs::read_to_string(&locale_file_name) {
-                            Ok(source) => source,
-                            Err(err) => {
-                                return Err(format!("Failed to read locale file: {}", err));
-                            }
-                        };
-                        let trans_content_inside: TransContent =
-                            toml::from_str(&trans_content_str).unwrap();
-                        println!("{:#?}", trans_content_inside.map);
-                        trans_content = Some(trans_content_inside);
-                    }
-                }
-                println!("UnknownMetaTag: {:?}, range: {:?}", tag, range);
-                break;
-            }
-            _ => {}
-        }
-    }
+    // for node in &template.content {
+    //     match node {
+    //         Node::UnknownMetaTag(tag, range) => {
+    //             if tag.starts_with("I18N") {
+    //                 if let Some(start) = tag.find("locale-files=") {
+    //                     let start = start + "locale-files=".len();
+    //                     let end = tag[start..].find(" ").unwrap_or_else(|| tag.len());
+    //                     let locale_file_name =
+    //                         format!("{}.toml", &tag[start..end].trim_matches('\"'));
+    //                     let trans_content_str = match std::fs::read_to_string(&locale_file_name) {
+    //                         Ok(source) => source,
+    //                         Err(err) => {
+    //                             return Err(format!("Failed to read locale file: {}", err));
+    //                         }
+    //                     };
+    //                     let trans_content_inside: TransContent =
+    //                         toml::from_str(&trans_content_str).unwrap();
+    //                     println!("{:#?}", trans_content_inside.map);
+    //                     trans_content = Some(trans_content_inside);
+    //                 }
+    //             }
+    //             println!("UnknownMetaTag: {:?}, range: {:?}", tag, range);
+    //             break;
+    //         }
+    //         _ => {}
+    //     }
+    // }
+
     fn contains_text_node(node_list: &Vec<Node>) -> bool {
         for node in node_list.iter() {
             match node {
@@ -164,15 +166,17 @@ pub fn compile(path: &str, source: &str) -> Result<CompiledTemplate, String> {
         }
     }
 
-    match trans_content {
-        Some(trans_content) => {
-            println!("{:#?}", trans_content.map);
-            translate(&mut template.content, &trans_content.map);
-        }
-        None => {
-            println!("trans_content is None");
-        }
-    }
+    // match trans_content {
+    //     Some(trans_content) => {
+    //         println!("{:#?}", trans_content.map);
+    //         translate(&mut template.content, &trans_content.map);
+    //     }
+    //     None => {
+    //         println!("trans_content is None");
+    //     }
+    // }
+
+    translate(&mut template.content, &trans_content.map);
 
     // stringify the template
     let mut stringifier = Stringifier::new(String::new(), path, source);
