@@ -1,5 +1,2 @@
-<!I18N locale-files="test-trans">
-<view>
-  <view>一些文本</view>
-  <view>另外一些文本</view>
-</view>
+<!I18N>
+<view>一些文本</view>

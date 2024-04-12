@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{compile, CompiledTemplate};
 
-#[wasm_bindgen(js_name = "CompileResult")]
+#[wasm_bindgen]
 pub struct JsCompileResult(Result<CompiledTemplate, String>);
 
 #[wasm_bindgen]

@@ -9,7 +9,12 @@ function translateWxml(filename, source, translations) {
   console.log("source", source);
   console.log("translations", translations);
   const result = compile(filename, source, translations);
-  console.log("result", result.output());
+  console.log("result", result.getOutput());
+  if (result.isSuccess()) {
+    return result.getOutput();
+  } else {
+    return source;
+  }
 }
 
 function wxmlI18nLoader(source) {

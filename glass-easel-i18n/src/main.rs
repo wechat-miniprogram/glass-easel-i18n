@@ -38,7 +38,16 @@ fn main() -> ExitCode {
                     return ExitCode::FAILURE;
                 }
             };
-            match compile(file_name, &source) {
+            let trans_source_path = path.with_extension("toml");
+            let trans_source = match std::fs::read_to_string(&trans_source_path) {
+                Ok(source) => source,
+                Err(err) => {
+                    eprintln!("Failed to read translate source file: {}", err);
+                    return ExitCode::FAILURE;
+                }
+            };
+            // Call compile as a binary file, convenient for debugging on the rust side
+            match compile(file_name, &source, &trans_source) {
                 Ok(r) => {
                     println!("{}", r.output);
                     match fs::write("output.wxml", r.output) {

@@ -1,1 +1,9 @@
-<!I18N locale-files=&quot;test-trans&quot;><view><block wx:if="{{lang===""en-us""}}"><view>Some words</view></block><block wx:else><view>一些文本</view></block><block wx:if="{{lang===""en-us""}}"><view>另外一些文本</view></block><block wx:else><view>另外一些文本</view></block></view>
+<block wx:if="{{lang===""en-us""}}">
+  <view>一些文本</view>
+</block>
+<block wx:elif="{{lang===""ja""}}">
+  <view>一些文本</view>
+</block>
+<block wx:else>
+  <view>一些文本</view>
+</block>
