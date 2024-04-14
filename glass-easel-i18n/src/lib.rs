@@ -7,7 +7,7 @@ use glass_easel_template_compiler::{
     stringify::{Stringifier, Stringify},
 };
 use serde::Deserialize;
-use std::{collections::HashMap, ops::Range, rc::Rc};
+use std::{collections::HashMap, ops::Range};
 use toml;
 mod js_bindings;
 
@@ -70,20 +70,14 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         false
     }
 
-    fn translate_element_i18n(
-        element: &mut Element,
-        lang: &str,
-        trans_content_map: &HashMap<String, HashMap<String, String>>,
-    ) {
+    fn translate_element_i18n(element: &mut Element, trans_content_map: &HashMap<String, String>) {
         match &mut element.kind {
             ElementKind::Normal { children, .. } => {
                 if let Node::Text(ref mut text_node) = children[0] {
                     match text_node {
                         Value::Static { ref mut value, .. } => {
-                            if let Some(translations) = trans_content_map.get(lang) {
-                                if let Some(translation) = translations.get(&value.to_string()) {
-                                    *value = translation.into();
-                                }
+                            if let Some(translation) = trans_content_map.get(&value.to_string()) {
+                                *value = translation.into();
                             }
                         }
                         _ => {}
@@ -123,54 +117,15 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         position
     }
 
-    fn translate(
-        node_list: &mut Vec<Node>,
-        trans_content_map: &HashMap<String, HashMap<String, String>>,
-    ) {
+    fn translate(node_list: &mut Vec<Node>, trans_content_map: &HashMap<String, String>) {
         for node in node_list {
-            let mut element_i18n: Option<Element> = None;
             match node {
                 Node::Element(element) => {
-                    let mut branches_element = element.clone();
-                    translate_element_i18n(&mut branches_element, "en-us", trans_content_map);
                     match &mut element.kind {
-                        ElementKind::Normal {
-                            children, tag_name, ..
-                        } => {
+                        ElementKind::Normal { children, .. } => {
+                            // current element only has one text child
                             if contains_text_node(&children) && children.len() == 1 {
-                                let eq_full = Box::new(Expression::EqFull {
-                                    left: Box::new(Expression::DataField {
-                                        name: "lang".into(),
-                                        location: tag_name.location.clone(),
-                                    }),
-                                    right: Box::new(Expression::LitStr {
-                                        value: "en-us".into(),
-                                        location: tag_name.location.clone(),
-                                    }),
-                                    location: tag_name.location.clone(),
-                                });
-                                let value = Value::Dynamic {
-                                    expression: eq_full,
-                                    double_brace_location: element.start_tag_location.clone(),
-                                    binding_map_keys: None,
-                                };
-
-                                element_i18n = Some(Element {
-                                    kind: ElementKind::If {
-                                        branches: vec![(
-                                            tag_name.location.clone(),
-                                            value,
-                                            vec![Node::Element(branches_element)],
-                                        )],
-                                        else_branch: Some((
-                                            tag_name.location.clone(),
-                                            vec![Node::Element(element.clone())],
-                                        )),
-                                    },
-                                    start_tag_location: element.start_tag_location.clone(),
-                                    close_location: element.close_location.clone(),
-                                    end_tag_location: element.end_tag_location.clone(),
-                                })
+                                translate_element_i18n(element, trans_content_map);
                             } else {
                                 translate(children, trans_content_map);
                             }
@@ -179,14 +134,6 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                     }
                 }
                 _ => {}
-            }
-            match element_i18n {
-                Some(element_i18n) => {
-                    *node = Node::Element(element_i18n);
-                }
-                None => {
-                    continue;
-                }
             }
         }
     }
@@ -197,15 +144,15 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         let mut branches: Vec<(Range<Position>, Value, Vec<Node>)> = vec![];
         let branch_template = remove_i18n_tag(&template.content);
         let branch_position = get_first_child_position(&template.content).unwrap();
-        for (key, value) in trans_content.map.iter() {
-            let template_item = branch_template.clone();
+        for (lang, trans_content_map) in trans_content.map.iter() {
+            let mut template_item = branch_template.clone();
             let eq_full = Box::new(Expression::EqFull {
                 left: Box::new(Expression::DataField {
                     name: "lang".into(),
                     location: branch_position.clone(),
                 }),
                 right: Box::new(Expression::LitStr {
-                    value: key.into(),
+                    value: lang.into(),
                     location: branch_position.clone(),
                 }),
                 location: branch_position.clone(),
@@ -215,19 +162,20 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                 double_brace_location: (branch_position.clone(), branch_position.clone()),
                 binding_map_keys: None,
             };
+            translate(&mut template_item, trans_content_map);
             branches.push((branch_position.clone(), branch_value, template_item));
         }
 
         // origin template only warpped with <block wx:else> </block> and is unnecessary to be translated by i18n
         let else_branch = Some((branch_position.clone(), branch_template.clone()));
-        let template_i18n = Element{
+        let template_i18n = Element {
             kind: ElementKind::If {
                 branches,
-                else_branch
+                else_branch,
             },
-            start_tag_location: (branch_position.clone(),branch_position.clone()),
+            start_tag_location: (branch_position.clone(), branch_position.clone()),
             close_location: branch_position.clone(),
-            end_tag_location: Some((branch_position.clone(),branch_position)),
+            end_tag_location: Some((branch_position.clone(), branch_position)),
         };
         template.content = vec![Node::Element(template_i18n)];
         // translate(&mut template.content, &trans_content.map);

@@ -1,2 +1,7 @@
 <!I18N>
-<view>一些文本</view>
+<view>一些文字</view>
+<view>另外一些文字</view>
+<view>没有翻译的一些文字</view>
+<view>
+  <view>嵌套的一些文字</view>
+</view>

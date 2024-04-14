@@ -1,9 +1,3 @@
-<block wx:if="{{lang===""en-us""}}">
-  <view>一些文本</view>
-</block>
-<block wx:elif="{{lang===""ja""}}">
-  <view>一些文本</view>
-</block>
-<block wx:else>
-  <view>一些文本</view>
-</block>
+<block wx:if="{{lang==="ja"}}"><view>いくつかのテキスト</view><view>他のテキスト</view><view>没有翻译的一些文字</view><view><view>ネストされたテキスト</view></view></block>
+<block wx:elif="{{lang==="en-us"}}"><view>Some words</view><view>Other words</view><view>没有翻译的一些文字</view><view><view>Some nested words</view></view></block>
+<block wx:else><view>一些文字</view><view>另外一些文字</view><view>没有翻译的一些文字</view><view><view>嵌套的一些文字</view></view></block>
