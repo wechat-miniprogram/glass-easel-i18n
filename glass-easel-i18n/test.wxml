@@ -5,3 +5,4 @@
 <view>
   <view>嵌套的一些文字</view>
 </view>
+<view title="说明" title2="说明">含属性的节点</view>

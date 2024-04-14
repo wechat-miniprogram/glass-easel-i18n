@@ -1,8 +1,7 @@
-use compact_str::CompactString;
 use glass_easel_template_compiler::{
     parse::expr::Expression,
     parse::parse,
-    parse::tag::{Element, ElementKind, Node, Value},
+    parse::tag::{Attribute, Element, ElementKind, Node, Value},
     parse::Position,
     stringify::{Stringifier, Stringify},
 };
@@ -31,7 +30,6 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         }
     }
     let trans_content: TransContent = toml::from_str(&trans_source).unwrap();
-
     // transform the template to support i18n
     println!("template:{:#?}", template.content);
 
@@ -70,24 +68,36 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         false
     }
 
-    fn translate_element_i18n(element: &mut Element, trans_content_map: &HashMap<String, String>) {
+    fn translate_value(value: &mut Value, trans_content_map: &HashMap<String, String>) {
+        match value {
+            Value::Static { ref mut value, .. } => {
+                if let Some(translation) = trans_content_map.get(&value.to_string()) {
+                    *value = translation.into();
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn translate_text_node(element: &mut Element, trans_content_map: &HashMap<String, String>) {
         match &mut element.kind {
             ElementKind::Normal { children, .. } => {
-                if let Node::Text(ref mut text_node) = children[0] {
-                    match text_node {
-                        Value::Static { ref mut value, .. } => {
-                            if let Some(translation) = trans_content_map.get(&value.to_string()) {
-                                *value = translation.into();
-                            }
-                        }
-                        _ => {}
-                    }
+                if let Node::Text(ref mut value_node) = children[0] {
+                    translate_value(value_node, trans_content_map);
                 };
             }
             _ => {}
         }
     }
 
+    fn translate_attribute(
+        attributes: &mut Vec<Attribute>,
+        trans_content_map: &HashMap<String, String>,
+    ) {
+        for attribute in attributes {
+            translate_value(&mut attribute.value, trans_content_map)
+        }
+    }
     // the Position of else_branch or branches just placed by the position of the template's first child
     fn get_first_child_position(template: &Vec<Node>) -> Option<Range<Position>> {
         let position: Option<Range<Position>>;
@@ -122,10 +132,17 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
             match node {
                 Node::Element(element) => {
                     match &mut element.kind {
-                        ElementKind::Normal { children, .. } => {
+                        ElementKind::Normal {
+                            children,
+                            attributes,
+                            ..
+                        } => {
+                            if attributes.len() != 0 {
+                                translate_attribute(attributes, trans_content_map);
+                            }
                             // current element only has one text child
                             if contains_text_node(&children) && children.len() == 1 {
-                                translate_element_i18n(element, trans_content_map);
+                                translate_text_node(element, trans_content_map);
                             } else {
                                 translate(children, trans_content_map);
                             }
@@ -178,7 +195,6 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
             end_tag_location: Some((branch_position.clone(), branch_position)),
         };
         template.content = vec![Node::Element(template_i18n)];
-        // translate(&mut template.content, &trans_content.map);
     }
 
     // stringify the template
