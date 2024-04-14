@@ -6,3 +6,5 @@
   <view>嵌套的一些文字</view>
 </view>
 <view title="说明" title2="说明">含属性的节点</view>
+<view>我<span>爱</span>你</view>
+<view>{{ a }} 加 {{ b }} = {{ c }}</view>

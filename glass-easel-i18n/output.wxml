@@ -1,3 +1,3 @@
-<block wx:if="{{lang==="ja"}}"><view>いくつかのテキスト</view><view>他のテキスト</view><view>没有翻译的一些文字</view><view><view>ネストされたテキスト</view></view><view title="説明する" title2="説明する">含属性的节点</view></block>
-<block wx:elif="{{lang==="en-us"}}"><view>Some words</view><view>Other words</view><view>没有翻译的一些文字</view><view><view>Some nested words</view></view><view title="explanation" title2="explanation">含属性的节点</view></block>
-<block wx:else><view>一些文字</view><view>另外一些文字</view><view>没有翻译的一些文字</view><view><view>嵌套的一些文字</view></view><view title="说明" title2="说明">含属性的节点</view></block>
+<block wx:if="{{lang==="en-us"}}"><view>Some words</view><view>Other words</view><view>没有翻译的一些文字</view><view><view>Some nested words</view></view><view title="explanation" title2="explanation">含属性的节点</view><view>I<span>Love</span>You</view><view>{{a}} 加 {{b}} = {{c}}</view></block>
+<block wx:elif="{{lang==="ja"}}"><view>いくつかのテキスト</view><view>他のテキスト</view><view>没有翻译的一些文字</view><view><view>ネストされたテキスト</view></view><view title="説明する" title2="説明する">含属性的节点</view><view>私<span>のように</span>あなた</view><view>{{a}} 加 {{b}} = {{c}}</view></block>
+<block wx:else><view>一些文字</view><view>另外一些文字</view><view>没有翻译的一些文字</view><view><view>嵌套的一些文字</view></view><view title="说明" title2="说明">含属性的节点</view><view>我<span>爱</span>你</view><view>{{a}} 加 {{b}} = {{c}}</view></block>

@@ -75,6 +75,9 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                     *value = translation.into();
                 }
             }
+            // Value::Dynamic { expression, double_brace_location, binding_map_keys } => {
+
+            // }
             _ => {}
         }
     }
@@ -141,14 +144,17 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                                 translate_attribute(attributes, trans_content_map);
                             }
                             // current element only has one text child
-                            if contains_text_node(&children) && children.len() == 1 {
-                                translate_text_node(element, trans_content_map);
-                            } else {
+                            // if contains_text_node(&children) && children.len() == 1 {
+                            //     translate_text_node(element, trans_content_map);
+                            // } else {
                                 translate(children, trans_content_map);
-                            }
+                            // }
                         }
                         _ => {}
                     }
+                }
+                Node::Text(value) => {
+                    translate_value(value, trans_content_map);
                 }
                 _ => {}
             }
