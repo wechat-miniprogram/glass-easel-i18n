@@ -374,6 +374,7 @@ version = "0.4.0"
 dependencies = [
  "clap 4.5.4",
  "glass-easel-template-compiler",
+ "regex",
  "serde",
  "toml 0.8.12",
  "wasm-bindgen",

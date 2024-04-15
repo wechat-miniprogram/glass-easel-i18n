@@ -5,6 +5,7 @@ use glass_easel_template_compiler::{
     parse::Position,
     stringify::{Stringifier, Stringify},
 };
+use regex::Regex;
 use serde::Deserialize;
 use std::{collections::HashMap, ops::Range};
 use toml;
@@ -58,16 +59,6 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         new_list
     }
 
-    fn contains_text_node(node_list: &Vec<Node>) -> bool {
-        for node in node_list.iter() {
-            match node {
-                Node::Text(_) => return true,
-                _ => {}
-            }
-        }
-        false
-    }
-
     fn translate_value(value: &mut Value, trans_content_map: &HashMap<String, String>) {
         match value {
             Value::Static { ref mut value, .. } => {
@@ -75,21 +66,113 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                     *value = translation.into();
                 }
             }
-            // Value::Dynamic { expression, double_brace_location, binding_map_keys } => {
-
-            // }
-            _ => {}
-        }
-    }
-
-    fn translate_text_node(element: &mut Element, trans_content_map: &HashMap<String, String>) {
-        match &mut element.kind {
-            ElementKind::Normal { children, .. } => {
-                if let Node::Text(ref mut value_node) = children[0] {
-                    translate_value(value_node, trans_content_map);
-                };
+            Value::Dynamic {
+                expression,
+                double_brace_location,
+                binding_map_keys,
+            } => {
+                fn split_expression(
+                    expr: &Expression,
+                    expr_vec: &mut Vec<String>,
+                    start_location: &Range<Position>,
+                    end_location: &Range<Position>,
+                ) {
+                    match expr {
+                        Expression::LitStr { value, .. } => expr_vec.push(value.to_string()),
+                        Expression::ToStringWithoutUndefined { value, .. } => {
+                            if let Expression::DataField { name, .. } = &**value {
+                                expr_vec.push(format!("{{{{{}}}}}", name));
+                            }
+                        }
+                        Expression::Plus {
+                            left,
+                            right,
+                            location,
+                        } => {
+                            let split = if let Expression::ToStringWithoutUndefined { .. }
+                            | Expression::LitStr { .. } = &**left
+                            {
+                                true
+                            } else if let Expression::ToStringWithoutUndefined { .. }
+                            | Expression::LitStr { .. } = &**right
+                            {
+                                true
+                            } else {
+                                false
+                            };
+                            if split {
+                                split_expression(&left, expr_vec, start_location, location);
+                                split_expression(&right, expr_vec, location, end_location);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                let mut expr_vec: Vec<String> = Vec::new();
+                split_expression(
+                    &expression,
+                    &mut expr_vec,
+                    &double_brace_location.0,
+                    &double_brace_location.1,
+                );
+                let mut expr_str = expr_vec.join("");
+                let mut translated_expr_vec: Vec<String> = Vec::new();
+                if let Some(translation) = trans_content_map.get(&expr_str) {
+                    expr_str = translation.to_string();
+                    println!("{}", expr_str);
+                    let regex = Regex::new(r"\{\{.*?\}\}").unwrap();
+                    let mut last = 0;
+                    for mat in regex.find_iter(&expr_str) {
+                        if mat.start() != last {
+                            translated_expr_vec.push(expr_str[last..mat.start()].to_string());
+                        }
+                        translated_expr_vec.push(expr_str[mat.start()..mat.end()].to_string());
+                        last = mat.end();
+                    }
+                    if last < expr_str.len() {
+                        translated_expr_vec.push(expr_str[last..].to_string());
+                    }
+                    fn get_expr(
+                        regex: &Regex,
+                        item: &String,
+                        position: &Range<Position>,
+                    ) -> Box<Expression> {
+                        if regex.is_match(item) {
+                            let data_field = Box::new(Expression::DataField {
+                                name: item.trim_matches(|c| c == '{' || c == '}').into(),
+                                location: position.clone(),
+                            });
+                            Box::new(Expression::ToStringWithoutUndefined {
+                                value: data_field,
+                                location: position.clone(),
+                            })
+                        } else {
+                            Box::new(Expression::LitStr {
+                                value: item.into(),
+                                location: position.clone(),
+                            })
+                        }
+                    }
+                    let translated_expression = translated_expr_vec
+                        .into_iter()
+                        .map(|item| get_expr(&regex, &item, &double_brace_location.0))
+                        .fold(None, |acc, x| match acc {
+                            None => Some(x),
+                            Some(acc) => Some(Box::new(Expression::Plus {
+                                left: acc,
+                                right: x,
+                                location: double_brace_location.clone().0,
+                            })),
+                        })
+                        .unwrap();
+                    let translated_dynamic_value = Value::Dynamic {
+                        expression: translated_expression,
+                        double_brace_location: double_brace_location.clone(),
+                        binding_map_keys: binding_map_keys.clone(),
+                    };
+                    *value = translated_dynamic_value;
+                }
             }
-            _ => {}
         }
     }
 
@@ -133,26 +216,19 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
     fn translate(node_list: &mut Vec<Node>, trans_content_map: &HashMap<String, String>) {
         for node in node_list {
             match node {
-                Node::Element(element) => {
-                    match &mut element.kind {
-                        ElementKind::Normal {
-                            children,
-                            attributes,
-                            ..
-                        } => {
-                            if attributes.len() != 0 {
-                                translate_attribute(attributes, trans_content_map);
-                            }
-                            // current element only has one text child
-                            // if contains_text_node(&children) && children.len() == 1 {
-                            //     translate_text_node(element, trans_content_map);
-                            // } else {
-                                translate(children, trans_content_map);
-                            // }
+                Node::Element(element) => match &mut element.kind {
+                    ElementKind::Normal {
+                        children,
+                        attributes,
+                        ..
+                    } => {
+                        if attributes.len() != 0 {
+                            translate_attribute(attributes, trans_content_map);
                         }
-                        _ => {}
+                        translate(children, trans_content_map);
                     }
-                }
+                    _ => {}
+                },
                 Node::Text(value) => {
                     translate_value(value, trans_content_map);
                 }
