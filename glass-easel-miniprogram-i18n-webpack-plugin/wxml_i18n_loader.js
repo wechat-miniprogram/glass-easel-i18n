@@ -5,11 +5,7 @@ const { compile } = require("glass-easel-i18n");
 
 function translateWxml(filename, source, translations) {
   // perform translate calculations by invoking wasm
-  console.log("filename", filename);
-  console.log("source", source);
-  console.log("translations", translations);
   const result = compile(filename, source, translations);
-  console.log("result", result.getOutput());
   if (result.isSuccess()) {
     return result.getOutput();
   } else {
@@ -50,10 +46,9 @@ function wxmlI18nLoader(source) {
         }
         completedFiles++;
         if (completedFiles === files.length) {
-          console.log("translations:\n", translations.join("\n"));
-          console.log("source:\n", source);
-          translateWxml(file, source, translations.join("\n"));
-          callback(null, source);
+          const translatedWxml = translateWxml(file, source, translations.join("\n"));
+          console.log(translatedWxml);
+          callback(null, translatedWxml);
         }
       });
     });

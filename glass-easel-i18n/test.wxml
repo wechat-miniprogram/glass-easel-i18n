@@ -1,10 +1,5 @@
 <!I18N>
 <view>一些文字</view>
-<view>另外一些文字</view>
-<view>没有翻译的一些文字</view>
-<view>
-  <view>嵌套的一些文字</view>
-</view>
-<view title="说明" title2="说明">含属性的节点</view>
-<view>我<span>爱</span>你</view>
-<view>{{ a }} 加 {{ b }} = {{ c }}</view>
+<view title="说明">含属性的节点</view>
+<div><!I18N translate-children>I<span style="color: red">LOVE</span>you</div>
+<view>{{ a }} 加 {{ b }} 得到 {{ a+b }}</view>

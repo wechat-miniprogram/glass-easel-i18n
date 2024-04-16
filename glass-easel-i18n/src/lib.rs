@@ -49,6 +49,21 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         false
     }
 
+    fn contains_i18n_translate_children(node_list: &Vec<Node>) -> bool {
+        for node in node_list {
+            match node {
+                Node::UnknownMetaTag(tag, ..) => {
+                    if tag == "I18N translate-children" {
+                        return true;
+                    }
+                    break;
+                }
+                _ => {}
+            }
+        }
+        false
+    }
+
     fn remove_i18n_tag(node_list: &Vec<Node>) -> Vec<Node> {
         let mut new_list = node_list.clone();
         if let Some(pos) = new_list.iter().position(
@@ -74,15 +89,17 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                 fn split_expression(
                     expr: &Expression,
                     expr_vec: &mut Vec<String>,
+                    placeholder_map: &mut HashMap<char, Box<Expression>>,
+                    placehoder_char: &mut char,
                     start_location: &Range<Position>,
                     end_location: &Range<Position>,
                 ) {
                     match expr {
                         Expression::LitStr { value, .. } => expr_vec.push(value.to_string()),
                         Expression::ToStringWithoutUndefined { value, .. } => {
-                            if let Expression::DataField { name, .. } = &**value {
-                                expr_vec.push(format!("{{{{{}}}}}", name));
-                            }
+                            expr_vec.push(format!("{{{{{}}}}}", placehoder_char));
+                            placeholder_map.insert(placehoder_char.clone(), value.clone());
+                            *placehoder_char = ((*placehoder_char as u8) + 1) as char;
                         }
                         Expression::Plus {
                             left,
@@ -101,25 +118,42 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                                 false
                             };
                             if split {
-                                split_expression(&left, expr_vec, start_location, location);
-                                split_expression(&right, expr_vec, location, end_location);
+                                split_expression(
+                                    &left,
+                                    expr_vec,
+                                    placeholder_map,
+                                    placehoder_char,
+                                    start_location,
+                                    location,
+                                );
+                                split_expression(
+                                    &right,
+                                    expr_vec,
+                                    placeholder_map,
+                                    placehoder_char,
+                                    location,
+                                    end_location,
+                                );
                             }
                         }
                         _ => {}
                     }
                 }
                 let mut expr_vec: Vec<String> = Vec::new();
+                let mut placeholder_map: HashMap<char, Box<Expression>> = HashMap::new();
+                let mut start_placeholder = 'A';
                 split_expression(
                     &expression,
                     &mut expr_vec,
+                    &mut placeholder_map,
+                    &mut start_placeholder,
                     &double_brace_location.0,
                     &double_brace_location.1,
                 );
                 let mut expr_str = expr_vec.join("");
-                let mut translated_expr_vec: Vec<String> = Vec::new();
                 if let Some(translation) = trans_content_map.get(&expr_str) {
                     expr_str = translation.to_string();
-                    println!("{}", expr_str);
+                    let mut translated_expr_vec: Vec<String> = Vec::new();
                     let regex = Regex::new(r"\{\{.*?\}\}").unwrap();
                     let mut last = 0;
                     for mat in regex.find_iter(&expr_str) {
@@ -136,16 +170,18 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                         regex: &Regex,
                         item: &String,
                         position: &Range<Position>,
+                        placeholder_map: &HashMap<char, Box<Expression>>,
                     ) -> Box<Expression> {
-                        if regex.is_match(item) {
-                            let data_field = Box::new(Expression::DataField {
-                                name: item.trim_matches(|c| c == '{' || c == '}').into(),
+                        let trimed_item = item.trim_matches(|c| c == '{' || c == '}');
+                        let potential_placeholder = trimed_item.chars().next().unwrap();
+                        if regex.is_match(item)
+                            && trimed_item.len() == 1
+                            && placeholder_map.contains_key(&potential_placeholder)
+                        {
+                            return Box::new(Expression::ToStringWithoutUndefined {
+                                value: placeholder_map.get(&potential_placeholder).unwrap().clone(),
                                 location: position.clone(),
                             });
-                            Box::new(Expression::ToStringWithoutUndefined {
-                                value: data_field,
-                                location: position.clone(),
-                            })
                         } else {
                             Box::new(Expression::LitStr {
                                 value: item.into(),
@@ -155,7 +191,9 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                     }
                     let translated_expression = translated_expr_vec
                         .into_iter()
-                        .map(|item| get_expr(&regex, &item, &double_brace_location.0))
+                        .map(|item| {
+                            get_expr(&regex, &item, &double_brace_location.0, &placeholder_map)
+                        })
                         .fold(None, |acc, x| match acc {
                             None => Some(x),
                             Some(acc) => Some(Box::new(Expression::Plus {
@@ -184,6 +222,24 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
             translate_value(&mut attribute.value, trans_content_map)
         }
     }
+
+    // fn translate_entire_children(node_list: &mut Vec<Node>,trans_content_map: &HashMap<String, String>) {
+    //     if let Some(pos) = node_list.iter().position(
+    //         |node| matches!(node, Node::UnknownMetaTag(tag, ..) if tag == "I18N translate-children"),
+    //     ) {
+    //         node_list.remove(pos);
+    //     }
+    //     let mut text_vec:Vec<String> = Vec::new();
+    //     for node in node_list {
+    //         match node {
+    //             Node::Text(value) => {
+                    
+    //             }
+    //             _ => {}
+    //         }
+    //     }
+    // }
+
     // the Position of else_branch or branches just placed by the position of the template's first child
     fn get_first_child_position(template: &Vec<Node>) -> Option<Range<Position>> {
         let position: Option<Range<Position>>;
@@ -225,6 +281,7 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                         if attributes.len() != 0 {
                             translate_attribute(attributes, trans_content_map);
                         }
+                        // if contains_i18n_translate_children(children) {}
                         translate(children, trans_content_map);
                     }
                     _ => {}
