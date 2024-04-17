@@ -3,7 +3,7 @@ import { type WebpackPluginInstance } from "webpack";
 
 export const GlassEaselMiniprogramWxmlI18nLoader = path.join(
   __dirname,
-  "wxml_i18n_loader.js"
+  "wxml_i18n_loader.js",
 );
 
 export class GlassEaselMiniprogramWxmlI18nWebpackPlugin

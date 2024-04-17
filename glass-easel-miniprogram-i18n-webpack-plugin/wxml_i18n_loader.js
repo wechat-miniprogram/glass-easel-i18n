@@ -41,12 +41,16 @@ function wxmlI18nLoader(source) {
             `[${lang}]\n` +
               Object.entries(data.translation)
                 .map(([key, value]) => `"${key}" = "${value}"`)
-                .join("\n")
+                .join("\n"),
           );
         }
         completedFiles++;
         if (completedFiles === files.length) {
-          const translatedWxml = translateWxml(file, source, translations.join("\n"));
+          const translatedWxml = translateWxml(
+            file,
+            source,
+            translations.join("\n"),
+          );
           console.log(translatedWxml);
           callback(null, translatedWxml);
         }
