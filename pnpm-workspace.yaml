@@ -1,0 +1,4 @@
+packages:
+  - "glass-easel-i18n"
+  - "glass-easel-miniprogram-i18n-webpack-plugin"
+  - "glass-easel-miniprogram-i18n-template"
