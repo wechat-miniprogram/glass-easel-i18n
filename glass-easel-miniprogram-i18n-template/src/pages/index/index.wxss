@@ -1,3 +1,15 @@
-.hello {
+.item {
+  margin: 20px;
   text-align: center;
+}
+.button {
+  background-color:green;
+  color:white;
+  border-radius: 5px;
+  width:100px;
+  height:30px;
+  line-height: 30px;
+  margin: 30px auto;
+  text-align: center;
+  cursor: pointer;
 }

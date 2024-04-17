@@ -32,7 +32,22 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
     }
     let trans_content: TransContent = toml::from_str(&trans_source).unwrap();
     // transform the template to support i18n
-    println!("template:{:#?}", template.content);
+    fn get_included_attributes(node_list: &Vec<Node>) -> Vec<String> {
+        for node in node_list {
+            match node {
+                Node::UnknownMetaTag(tag, ..) => {
+                    if tag.starts_with("I18N") {
+                        let regex = Regex::new(r#"I18N translate-attributes="([^"]*)""#).unwrap();
+                        let caps = regex.captures(tag).unwrap();
+                        return caps[1].split_whitespace().map(|s| s.to_string()).collect();
+                    }
+                    break;
+                }
+                _ => {}
+            }
+        }
+        Vec::new()
+    }
 
     fn contains_i18n_tag(node_list: &Vec<Node>) -> bool {
         for node in node_list {
@@ -72,6 +87,37 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
             new_list.remove(pos);
         }
         new_list
+    }
+
+    fn remove_i18n_translate_children(node_list: &mut Vec<Node>) {
+        node_list.iter_mut().for_each(|node| {
+            if let Node::Element(element) = node {
+                if let ElementKind::Normal { children, .. } = &mut element.kind {
+                    remove_i18n_translate_children(children);
+                }
+            }
+        });
+        node_list.retain(|node| match node {
+            Node::UnknownMetaTag(tag, ..) if tag == "I18N translate-children" => false,
+            _ => true,
+        })
+    }
+
+    fn split_translated_str(translated_str: String) -> Vec<String> {
+        let mut translated_str_vec: Vec<String> = Vec::new();
+        let regex = Regex::new(r"\{\{.*?\}\}").unwrap();
+        let mut last = 0;
+        for mat in regex.find_iter(&translated_str) {
+            if mat.start() != last {
+                translated_str_vec.push(translated_str[last..mat.start()].to_string());
+            }
+            translated_str_vec.push(translated_str[mat.start()..mat.end()].to_string());
+            last = mat.end();
+        }
+        if last < translated_str.len() {
+            translated_str_vec.push(translated_str[last..].to_string());
+        }
+        translated_str_vec
     }
 
     fn translate_value(value: &mut Value, trans_content_map: &HashMap<String, String>) {
@@ -152,20 +198,8 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                 );
                 let mut expr_str = expr_vec.join("");
                 if let Some(translation) = trans_content_map.get(&expr_str) {
-                    expr_str = translation.to_string();
-                    let mut translated_expr_vec: Vec<String> = Vec::new();
-                    let regex = Regex::new(r"\{\{.*?\}\}").unwrap();
-                    let mut last = 0;
-                    for mat in regex.find_iter(&expr_str) {
-                        if mat.start() != last {
-                            translated_expr_vec.push(expr_str[last..mat.start()].to_string());
-                        }
-                        translated_expr_vec.push(expr_str[mat.start()..mat.end()].to_string());
-                        last = mat.end();
-                    }
-                    if last < expr_str.len() {
-                        translated_expr_vec.push(expr_str[last..].to_string());
-                    }
+                    expr_str = translation.clone();
+                    let translated_expr_vec: Vec<String> = split_translated_str(expr_str);
                     fn get_expr(
                         regex: &Regex,
                         item: &String,
@@ -189,6 +223,7 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                             })
                         }
                     }
+                    let regex = Regex::new(r"\{\{.*?\}\}").unwrap();
                     let translated_expression = translated_expr_vec
                         .into_iter()
                         .map(|item| {
@@ -217,28 +252,71 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
     fn translate_attribute(
         attributes: &mut Vec<Attribute>,
         trans_content_map: &HashMap<String, String>,
+        included_attributes: &Vec<String>,
     ) {
         for attribute in attributes {
-            translate_value(&mut attribute.value, trans_content_map)
+            if included_attributes.contains(&attribute.name.name.to_string()){
+                translate_value(&mut attribute.value, trans_content_map)
+            }
         }
     }
 
-    // fn translate_entire_children(node_list: &mut Vec<Node>,trans_content_map: &HashMap<String, String>) {
-    //     if let Some(pos) = node_list.iter().position(
-    //         |node| matches!(node, Node::UnknownMetaTag(tag, ..) if tag == "I18N translate-children"),
-    //     ) {
-    //         node_list.remove(pos);
-    //     }
-    //     let mut text_vec:Vec<String> = Vec::new();
-    //     for node in node_list {
-    //         match node {
-    //             Node::Text(value) => {
-                    
-    //             }
-    //             _ => {}
-    //         }
-    //     }
-    // }
+    fn translate_entire_children(
+        node_list: &mut Vec<Node>,
+        trans_content_map: &HashMap<String, String>,
+    ) {
+        if let Some(pos) = node_list.iter().position(
+            |node| matches!(node, Node::UnknownMetaTag(tag, ..) if tag == "I18N translate-children"),
+        ) {
+            node_list.remove(pos);
+        }
+        let mut text_vec: Vec<String> = Vec::new();
+        let mut placehoder_char = 'A';
+        let mut placeholder_map: HashMap<char, Node> = HashMap::new();
+        let mut node_location: Option<Range<Position>> = None;
+        for node in node_list.into_iter() {
+            match node {
+                Node::Text(value) => {
+                    if let Value::Static { value, location } = value {
+                        text_vec.push(value.to_string());
+                        if let None = node_location {
+                            node_location = Some(location.clone());
+                        }
+                    }
+                }
+                _ => {
+                    text_vec.push(format!("{{{{{}}}}}", placehoder_char));
+                    placeholder_map.insert(placehoder_char.clone(), node.clone());
+                    placehoder_char = ((placehoder_char as u8) + 1) as char;
+                }
+            }
+        }
+        let mut text_str = text_vec.join("");
+        if let Some(translation) = trans_content_map.get(&text_str) {
+            text_str = translation.clone();
+            let translated_text_vec = split_translated_str(text_str);
+            let regex = Regex::new(r"\{\{.*?\}\}").unwrap();
+            let mut new_node_list: Vec<Node> = Vec::new();
+            for item in translated_text_vec {
+                let trimed_item = item.trim_matches(|c| c == '{' || c == '}');
+                let potential_placeholder = trimed_item.chars().next().unwrap();
+                if regex.is_match(&item)
+                    && trimed_item.len() == 1
+                    && placeholder_map.contains_key(&potential_placeholder)
+                {
+                    new_node_list
+                        .push(placeholder_map.get(&potential_placeholder).unwrap().clone());
+                } else {
+                    let static_text = Node::Text(Value::Static {
+                        value: item.into(),
+                        location: node_location.clone().unwrap(),
+                    });
+                    new_node_list.push(static_text);
+                }
+            }
+            *node_list = new_node_list;
+        }
+    }
 
     // the Position of else_branch or branches just placed by the position of the template's first child
     fn get_first_child_position(template: &Vec<Node>) -> Option<Range<Position>> {
@@ -269,7 +347,11 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         position
     }
 
-    fn translate(node_list: &mut Vec<Node>, trans_content_map: &HashMap<String, String>) {
+    fn translate(
+        node_list: &mut Vec<Node>,
+        trans_content_map: &HashMap<String, String>,
+        included_attributes: &Vec<String>,
+    ) {
         for node in node_list {
             match node {
                 Node::Element(element) => match &mut element.kind {
@@ -279,10 +361,12 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                         ..
                     } => {
                         if attributes.len() != 0 {
-                            translate_attribute(attributes, trans_content_map);
+                            translate_attribute(attributes, trans_content_map, included_attributes);
                         }
-                        // if contains_i18n_translate_children(children) {}
-                        translate(children, trans_content_map);
+                        if contains_i18n_translate_children(children) {
+                            translate_entire_children(children, trans_content_map);
+                        }
+                        translate(children, trans_content_map, included_attributes);
                     }
                     _ => {}
                 },
@@ -295,7 +379,9 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
     }
 
     if contains_i18n_tag(&template.content) {
-        // let tenmplate_position = Rc::new(get_first_child_position(&template.content).unwrap());
+        // Get the attributes that need to be translated
+        let included_attributes = get_included_attributes(&template.content);
+        println!("{:#?}", included_attributes);
         // Element::IF has two children: branches and else_branch
         let mut branches: Vec<(Range<Position>, Value, Vec<Node>)> = vec![];
         let branch_template = remove_i18n_tag(&template.content);
@@ -318,12 +404,14 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
                 double_brace_location: (branch_position.clone(), branch_position.clone()),
                 binding_map_keys: None,
             };
-            translate(&mut template_item, trans_content_map);
+            translate(&mut template_item, trans_content_map, &included_attributes);
             branches.push((branch_position.clone(), branch_value, template_item));
         }
 
         // origin template only warpped with <block wx:else> </block> and is unnecessary to be translated by i18n
-        let else_branch = Some((branch_position.clone(), branch_template.clone()));
+        let mut else_branch_template = branch_template.clone();
+        remove_i18n_translate_children(&mut else_branch_template);
+        let else_branch = Some((branch_position.clone(), else_branch_template));
         let template_i18n = Element {
             kind: ElementKind::If {
                 branches,

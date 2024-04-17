@@ -4,7 +4,7 @@ Page({
     a:1,
     b:2,
   },
-  helloTap() {
+  changeLang() {
     if(this.data.lang === "en-us"){
       this.setData({
         lang: "ja",

@@ -1,8 +1,8 @@
-<!I18N>
-<div>一些文字</div>
-<div title="说明">含属性的节点</div>
-<div>我<span style="color: red">爱</span>你</div>
-<div>{{ a }} 加 {{ b }} 得到 {{ a+b }}</div>
-<div class="hello" bind:tap="helloTap">
+<!I18N translate-attributes="title">
+<div class="item">一些文字</div>
+<div class="item" title="说明" exclued-attribute="说明">含属性的节点</div>
+<div class="item"><!I18N translate-children>我<span style="color: red">爱</span>你</div>
+<div class="item">{{ a }} 加 {{ b }} 得到 {{ a+b }}</div>
+<div class="button" bind:tap="changeLang">
   切换语言
 </div>
