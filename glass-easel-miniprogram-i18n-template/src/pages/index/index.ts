@@ -1,21 +1,21 @@
 Page({
   data: {
-    lang: "en-us",
+    locale: "en-us",
     a:1,
     b:2,
   },
-  changeLang() {
-    if(this.data.lang === "en-us"){
+  changeLocale() {
+    if(this.data.locale === "en-us"){
       this.setData({
-        lang: "ja",
+        locale: "ja",
       })
-    } else if(this.data.lang === "ja") {
+    } else if(this.data.locale === "ja") {
       this.setData({
-        lang: "zh-cn",
+        locale: "zh-cn",
       })
     } else {
       this.setData({
-        lang: "en-us",
+        locale: "en-us",
       })
     }
   },

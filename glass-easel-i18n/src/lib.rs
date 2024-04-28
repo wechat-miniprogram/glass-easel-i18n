@@ -390,7 +390,7 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
             let mut template_item = branch_template.clone();
             let eq_full = Box::new(Expression::EqFull {
                 left: Box::new(Expression::DataField {
-                    name: "lang".into(),
+                    name: "locale".into(),
                     location: branch_position.clone(),
                 }),
                 right: Box::new(Expression::LitStr {
