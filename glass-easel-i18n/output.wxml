@@ -1,3 +1,10 @@
-<block wx:if="{{locale==="ja"}}"><view>いくつかのテキスト</view><view title="説明する" exclued-attribute="说明">属性を持つノード</view><div>我<span style="color: red">爱</span>你</div><view>{{a}} を {{b}} に追加すると、{{a+b}} が得られます</view></block>
-<block wx:elif="{{locale==="en-us"}}"><view>Some words</view><view title="explanation" exclued-attribute="说明">Node with attributes</view><div>我<span style="color: red">Love</span>你</div><view>Add {{a}} to {{b}} to get {{a+b}}</view></block>
-<block wx:else><view>一些文字</view><view title="说明" exclued-attribute="说明">含属性的节点</view><div>我<span style="color: red">爱</span>你</div><view>{{a}} 加 {{b}} 得到 {{a+b}}</view></block>
+<block wx:if="{{locale==="ja"}}"><view>いくつかのテキスト</view><view title="説明する" exclued-attribute="说明">属性を持つノード</view><div>我
+  <span style="color: red">爱</span>
+  你
+</div><view>{{a}} を {{b}} に追加すると、{{a+b}} が得られます</view></block><block wx:elif="{{locale==="en-us"}}"><view>Some words</view><view title="explanation" exclued-attribute="说明">Node with attributes</view><div>我
+  <span style="color: red">Love</span>
+  你
+</div><view>Add {{a}} to {{b}} to get {{a+b}}</view></block><block wx:else><view>一些文字</view><view title="说明" exclued-attribute="说明">含属性的节点</view><div>我
+  <span style="color: red">爱</span>
+  你
+</div><view>{{a}} 加 {{b}} 得到 {{a+b}}</view></block>

@@ -1,0 +1,17 @@
+msgid "一些文字"
+msgstr "Some words"
+
+msgid "含属性的节点"
+msgstr "Node with attributes"
+
+msgid "说明"
+msgstr "explanation"
+
+msgid "我{{A}}你"
+msgstr "I {{A}} You"
+
+msgid "爱"
+msgstr "Love"
+
+msgid "{{A}} 加 {{B}} 得到 {{C}}"
+msgstr "Add {{A}} to {{B}} to get {{C}}"

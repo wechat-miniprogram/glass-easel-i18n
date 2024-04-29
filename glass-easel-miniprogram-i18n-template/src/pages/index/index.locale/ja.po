@@ -1,0 +1,14 @@
+msgid "一些文字"
+msgstr "いくつかのテキスト"
+
+msgid "含属性的节点"
+msgstr "属性を持つノード"
+
+msgid "说明"
+msgstr "説明する"
+
+msgid "我{{A}}你"
+msgstr "愛してます"
+
+msgid "{{A}} 加 {{B}} 得到 {{C}}"
+msgstr "{{A}} を {{B}} に追加すると、{{C}} が得られます"
