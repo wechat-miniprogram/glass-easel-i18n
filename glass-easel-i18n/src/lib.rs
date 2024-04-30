@@ -16,10 +16,46 @@ pub struct CompiledTemplate {
     pub source_map: Vec<u8>,
 }
 
+pub struct UntranslatedTerms {
+    pub output: Vec<String>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct TransContent {
     #[serde(flatten)]
     pub map: HashMap<String, HashMap<String, String>>,
+}
+
+fn contains_i18n_translate_children(node_list: &Vec<Node>) -> bool {
+    for node in node_list {
+        match node {
+            Node::UnknownMetaTag(tag, ..) => {
+                if tag == "I18N translate-children" {
+                    return true;
+                }
+                break;
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
+fn get_included_attributes(node_list: &Vec<Node>) -> Vec<String> {
+    for node in node_list {
+        match node {
+            Node::UnknownMetaTag(tag, ..) => {
+                if tag.starts_with("I18N") {
+                    let regex = Regex::new(r#"I18N translate-attributes="([^"]*)""#).unwrap();
+                    let caps = regex.captures(tag).unwrap();
+                    return caps[1].split_whitespace().map(|s| s.to_string()).collect();
+                }
+                break;
+            }
+            _ => {}
+        }
+    }
+    Vec::new()
 }
 
 pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledTemplate, String> {
@@ -32,43 +68,12 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
     }
     let trans_content: TransContent = toml::from_str(&trans_source).unwrap();
     // transform the template to support i18n
-    fn get_included_attributes(node_list: &Vec<Node>) -> Vec<String> {
-        for node in node_list {
-            match node {
-                Node::UnknownMetaTag(tag, ..) => {
-                    if tag.starts_with("I18N") {
-                        let regex = Regex::new(r#"I18N translate-attributes="([^"]*)""#).unwrap();
-                        let caps = regex.captures(tag).unwrap();
-                        return caps[1].split_whitespace().map(|s| s.to_string()).collect();
-                    }
-                    break;
-                }
-                _ => {}
-            }
-        }
-        Vec::new()
-    }
 
     fn contains_i18n_tag(node_list: &Vec<Node>) -> bool {
         for node in node_list {
             match node {
                 Node::UnknownMetaTag(tag, ..) => {
                     if tag.starts_with("I18N") {
-                        return true;
-                    }
-                    break;
-                }
-                _ => {}
-            }
-        }
-        false
-    }
-
-    fn contains_i18n_translate_children(node_list: &Vec<Node>) -> bool {
-        for node in node_list {
-            match node {
-                Node::UnknownMetaTag(tag, ..) => {
-                    if tag == "I18N translate-children" {
                         return true;
                     }
                     break;
@@ -255,7 +260,7 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
         included_attributes: &Vec<String>,
     ) {
         for attribute in attributes {
-            if included_attributes.contains(&attribute.name.name.to_string()){
+            if included_attributes.contains(&attribute.name.name.to_string()) {
                 translate_value(&mut attribute.value, trans_content_map)
             }
         }
@@ -278,7 +283,7 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
             match node {
                 Node::Text(value) => {
                     if let Value::Static { value, location } = value {
-                        text_vec.push(value.to_string());
+                        text_vec.push(value.trim().to_string());
                         if let None = node_location {
                             node_location = Some(location.clone());
                         }
@@ -434,4 +439,138 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
     sm.to_writer(&mut source_map)
         .map_err(|_| "Failed to write output")?;
     Ok(CompiledTemplate { output, source_map })
+}
+
+pub fn search(path: &str, source: &str) -> Result<UntranslatedTerms, String> {
+    // parse the template
+    let (template, parse_state) = parse(path, source);
+    for warning in parse_state.warnings() {
+        if warning.prevent_success() {
+            return Err(format!("Failed to compile template: {}", warning));
+        }
+    }
+    let mut output = vec![];
+    let included_attributes = get_included_attributes(&template.content);
+    fn collect_terms(value: &Value, terms_vec: &mut Vec<String>) {
+        match value {
+            Value::Static { value, .. } => {
+                let untranslated_term = value.trim().to_string();
+                if !terms_vec.contains(&untranslated_term) {
+                    terms_vec.push(untranslated_term);
+                }
+            }
+            Value::Dynamic { expression, .. } => {
+                fn split_expression(
+                    expr: &Expression,
+                    expr_vec: &mut Vec<String>,
+                    placehoder_char: &mut char,
+                ) {
+                    match expr {
+                        Expression::LitStr { value, .. } => expr_vec.push(value.to_string()),
+                        Expression::ToStringWithoutUndefined { .. } => {
+                            expr_vec.push(format!("{{{{{}}}}}", placehoder_char));
+                            *placehoder_char = ((*placehoder_char as u8) + 1) as char;
+                        }
+                        Expression::Plus { left, right, .. } => {
+                            let split = if let Expression::ToStringWithoutUndefined { .. }
+                            | Expression::LitStr { .. } = &**left
+                            {
+                                true
+                            } else if let Expression::ToStringWithoutUndefined { .. }
+                            | Expression::LitStr { .. } = &**right
+                            {
+                                true
+                            } else {
+                                false
+                            };
+                            if split {
+                                split_expression(&left, expr_vec, placehoder_char);
+                                split_expression(&right, expr_vec, placehoder_char);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                let mut expr_vec: Vec<String> = Vec::new();
+                let mut start_placeholder = 'A';
+                split_expression(&expression, &mut expr_vec, &mut start_placeholder);
+                terms_vec.push(expr_vec.join(""));
+            }
+        }
+    }
+    fn collect_attribute_terms(
+        attributes: &Vec<Attribute>,
+        terms_vec: &mut Vec<String>,
+        included_attributes: &Vec<String>,
+    ) {
+        for attribute in attributes {
+            if included_attributes.contains(&attribute.name.name.to_string()) {
+                collect_terms(&attribute.value, terms_vec)
+            }
+        }
+    }
+    fn collect_entire_children(
+        node_list: &Vec<Node>,
+        terms_vec: &mut Vec<String>,
+        included_attributes: &Vec<String>,
+    ) {
+        let mut text_vec: Vec<String> = Vec::new();
+        let mut placehoder_char = 'A';
+        for node in node_list.into_iter() {
+            match node {
+                // handle <!I18N translate-children>
+                Node::UnknownMetaTag(..) => {
+                    continue;
+                }
+                Node::Text(value) => {
+                    if let Value::Static { value, .. } = value {
+                        text_vec.push(value.trim().to_string());
+                    }
+                }
+                Node::Element(element) => match &element.kind {
+                    ElementKind::Normal { children, .. } => {
+                        text_vec.push(format!("{{{{{}}}}}", placehoder_char));
+                        placehoder_char = ((placehoder_char as u8) + 1) as char;
+                        search_terms(children, terms_vec, included_attributes)
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
+        terms_vec.push(text_vec.join(""));
+    }
+    fn search_terms(
+        node_list: &Vec<Node>,
+        terms_vec: &mut Vec<String>,
+        included_attributes: &Vec<String>,
+    ) {
+        for node in node_list {
+            match node {
+                Node::Element(element) => match &element.kind {
+                    ElementKind::Normal {
+                        children,
+                        attributes,
+                        ..
+                    } => {
+                        if attributes.len() != 0 {
+                            collect_attribute_terms(attributes, terms_vec, included_attributes);
+                        }
+                        if contains_i18n_translate_children(children) {
+                            collect_entire_children(children, terms_vec, included_attributes);
+                        } else {
+                            search_terms(children, terms_vec, included_attributes);
+                        }
+                    }
+                    _ => {}
+                },
+                Node::Text(value) => {
+                    collect_terms(value, terms_vec);
+                }
+                _ => {}
+            }
+        }
+    }
+    search_terms(&template.content, &mut output, &included_attributes);
+    Ok(UntranslatedTerms { output })
 }

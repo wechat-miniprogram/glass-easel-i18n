@@ -17,6 +17,13 @@ enum Commands {
         /// Path of the tamplate file
         path: PathBuf,
     },
+    /// Search the untranslated terms
+    Search {
+        /// Path of the tamplate file
+        path: PathBuf,
+        /// Place holder of the untranslated terms
+        place_holder: String,
+    },
 }
 
 fn main() -> ExitCode {
@@ -51,6 +58,42 @@ fn main() -> ExitCode {
                 Ok(r) => {
                     println!("{}", r.output);
                     match fs::write("output.wxml", r.output) {
+                        Ok(()) => println!("output success"),
+                        Err(err) => println!("output fail:{}", err),
+                    }
+                }
+                Err(err) => {
+                    eprintln!("{}", err);
+                    return ExitCode::FAILURE;
+                }
+            }
+        }
+        Commands::Search { path, place_holder } => {
+            let Some(file_name) = path.file_name() else {
+                eprintln!("Not a file");
+                return ExitCode::FAILURE;
+            };
+            let Some(file_name) = file_name.to_str() else {
+                eprintln!("Not a UTF-8 file name");
+                return ExitCode::FAILURE;
+            };
+            let source = match std::fs::read_to_string(&path) {
+                Ok(source) => source,
+                Err(err) => {
+                    eprintln!("Failed to read source file: {}", err);
+                    return ExitCode::FAILURE;
+                }
+            };
+            match search(file_name, &source) {
+                Ok(untranslated_terms) => {
+                    println!("{:#?}", untranslated_terms.output);
+                    let mut po_terms = String::new();
+                    for term in untranslated_terms.output {
+                        let po_term =
+                            format!("msgid \"{}\"\nmsgstr \"{}\"\n\n", term, place_holder);
+                        po_terms.push_str(&po_term);
+                    }
+                    match fs::write("output.po", po_terms) {
                         Ok(()) => println!("output success"),
                         Err(err) => println!("output fail:{}", err),
                     }

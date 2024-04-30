@@ -1,0 +1,20 @@
+msgid "一些文字" 
+msgstr "尚未翻译"
+
+msgid "说明" 
+msgstr "尚未翻译"
+
+msgid "含属性的节点" 
+msgstr "尚未翻译"
+
+msgid "爱" 
+msgstr "尚未翻译"
+
+msgid "我{{A}}你" 
+msgstr "尚未翻译"
+
+msgid "{{A}} 加 {{B}} 得到 {{C}}" 
+msgstr "尚未翻译"
+
+msgid "切换语言" 
+msgstr "尚未翻译"
