@@ -2,7 +2,7 @@
   "name": "glass-easel-i18n",
   "version": "0.4.0",
   "description": "",
-  "main": "index.js",
+  "main": "pkg-nodejs/glass_easel_i18n.js",
   "keywords": [
     "glass-easel"
   ],
