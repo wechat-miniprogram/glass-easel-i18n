@@ -6,11 +6,11 @@ const { program } = require('commander')
 const { search } = require('glass-easel-i18n')
 
 program
+  .command('search')
   .option('-f, --file <filePath>', '需要收集的文件')
   .option('-p, --place-holder <placeHolder>', '翻译占位')
-  .action(() => {
-    const { file, placeHolder } = program.opts()
-
+  .action((options) => {
+    const { file, placeHolder } = options
     // read i18nconfig.json to get included attributes
     let attributes = []
     const configPath = path.join(process.cwd(), 'i18nconfig.json')

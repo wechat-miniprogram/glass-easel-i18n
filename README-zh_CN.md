@@ -95,7 +95,7 @@ rules: [
   msgstr "Add {{A}} to {{B}} to get {{C}}"
   ```
 
-- 一系列子节点需要被当做一个整体来翻译：
+- 一系列子节点需要被当做一个整体来翻译，在模板中添加声明 `<!I18N translate-children>` 
 
   ```html
   <div>
