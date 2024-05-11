@@ -2,10 +2,9 @@ const path = require('node:path')
 const fs = require('node:fs')
 const { compile } = require('glass-easel-i18n')
 
-function translateWxml(filename, source, translations) {
+function translateWxml(filename, source, translations, attributes) {
   // perform translate calculations by invoking wasm
-  console.log(filename);
-  const result = compile(filename, source, translations)
+  const result = compile(filename, source, translations, attributes)
   if (result.isSuccess()) {
     return result.getOutput()
   } else {
@@ -20,6 +19,16 @@ function wxmlI18nLoader(source) {
   const localeDirName = `${currentFileName}.locale`
   const localeDir = path.join(path.dirname(this.resourcePath), localeDirName)
   const translations = []
+
+  // read i18nconfig.json to get included attributes
+  let attributes = []
+  const configPath = path.join(this.query.configPath, 'i18nconfig.json')
+  if (fs.existsSync(configPath)) {
+    const i18nConfigContent = fs.readFileSync(configPath, 'utf-8')
+    const i18nConfig = JSON.parse(i18nConfigContent)
+    i18nConfig['attributes'] && (attributes = [...i18nConfig['attributes']])
+  }
+
   fs.readdir(localeDir, (err, files) => {
     if (err) {
       console.error('Could find locale directory', err)
@@ -59,7 +68,12 @@ function wxmlI18nLoader(source) {
           )
           completedFiles++
           if (completedFiles === poFiles) {
-            const translatedWxml = translateWxml(this.resourcePath, source, translations.join('\n'))
+            const translatedWxml = translateWxml(
+              this.resourcePath,
+              source,
+              translations.join('\n'),
+              attributes,
+            )
             console.log(translatedWxml)
             callback(null, translatedWxml)
           }

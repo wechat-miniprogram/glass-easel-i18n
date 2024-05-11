@@ -1,4 +1,4 @@
-use super::{contains_i18n_translate_children, get_included_attributes};
+use super::contains_i18n_translate_children;
 use glass_easel_template_compiler::{
     parse::expr::Expression,
     parse::parse,
@@ -22,7 +22,12 @@ pub struct TransContent {
     pub map: HashMap<String, HashMap<String, String>>,
 }
 
-pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledTemplate, String> {
+pub fn compile(
+    path: &str,
+    source: &str,
+    trans_source: &str,
+    included_attributes: Vec<String>,
+) -> Result<CompiledTemplate, String> {
     // parse the template
     let (mut template, parse_state) = parse(path, source);
     for warning in parse_state.warnings() {
@@ -349,7 +354,6 @@ pub fn compile(path: &str, source: &str, trans_source: &str) -> Result<CompiledT
 
     if contains_i18n_tag(&template.content) {
         // Get the attributes that need to be translated
-        let included_attributes = get_included_attributes(&template.content);
         println!("{:#?}", included_attributes);
         // Element::IF has two children: branches and else_branch
         let mut branches: Vec<(Range<Position>, Value, Vec<Node>)> = vec![];

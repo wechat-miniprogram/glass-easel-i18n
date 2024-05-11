@@ -53,8 +53,10 @@ fn main() -> ExitCode {
                     return ExitCode::FAILURE;
                 }
             };
+            // Usage: test binary
+            let included_attributes: Vec<String> = vec!["title".to_string()];
             // Call compile as a binary file, convenient for debugging on the rust side
-            match compile(file_name, &source, &trans_source) {
+            match compile(file_name, &source, &trans_source, included_attributes) {
                 Ok(r) => {
                     println!("{}", r.output);
                     match fs::write("output.wxml", r.output) {
@@ -84,7 +86,9 @@ fn main() -> ExitCode {
                     return ExitCode::FAILURE;
                 }
             };
-            match search(file_name, &source) {
+            // Usage: test binary
+            let included_attributes: Vec<String> = vec!["title".to_string()];
+            match search(file_name, &source, included_attributes) {
                 Ok(untranslated_terms) => {
                     println!("{:#?}", untranslated_terms.output);
                     let mut po_terms = String::new();

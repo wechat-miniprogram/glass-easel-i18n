@@ -1,4 +1,4 @@
-use super::{contains_i18n_translate_children, get_included_attributes};
+use super::contains_i18n_translate_children;
 use glass_easel_template_compiler::{
     parse::expr::Expression,
     parse::parse,
@@ -9,7 +9,11 @@ pub struct UntranslatedTerms {
     pub output: Vec<String>,
 }
 
-pub fn search(path: &str, source: &str) -> Result<UntranslatedTerms, String> {
+pub fn search(
+    path: &str,
+    source: &str,
+    included_attributes: Vec<String>,
+) -> Result<UntranslatedTerms, String> {
     // parse the template
     let (template, parse_state) = parse(path, source);
     for warning in parse_state.warnings() {
@@ -18,7 +22,6 @@ pub fn search(path: &str, source: &str) -> Result<UntranslatedTerms, String> {
         }
     }
     let mut output = vec![];
-    let included_attributes = get_included_attributes(&template.content);
     fn collect_terms(value: &Value, terms_vec: &mut Vec<String>) {
         match value {
             Value::Static { value, .. } => {
