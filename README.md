@@ -1,4 +1,5 @@
 # glass-easel-i18n
+[中文版README](./README-zh_CN.md)
 
 Non-invasive I18n Support for [glass-easel](https://github.com/wechat-miniprogram/glass-easel)
 
