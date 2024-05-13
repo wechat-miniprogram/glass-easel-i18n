@@ -4,6 +4,36 @@
 
 ## 使用指南
 
+### 快速开始
+
+在 `pages` 中添加同名 `locale` 目录，例如 `pages/index` 下新增 `index.locale` ，添加翻译文件 `en-us.po`（文件名即为 `locale` ）
+
+对于文件 `index.wxml` ：
+
+```html
+<!I18N>
+<!-- 启用 i18n 的声明 -->
+<view>一些文本</view>
+```
+
+如果存在英文翻译文件 `index.locale/en-us.po`：
+
+```
+msgid "一些文字"
+msgstr "Some words"
+```
+
+经过 i18n 预编译器后：
+
+```html
+<block wx:if="{{ locale === "en-us" }}">
+  <view>Some words</view>
+</block>
+<block wx:else>
+  <view>一些文本</view>
+</block>
+```
+
 ### 项目迁移
 
 > 可参考 glass-easel-i18n/glass-easel-miniprogram-i18n-template
@@ -36,92 +66,93 @@ rules: [
 ]
 ```
 
-### 翻译文件
+### 进阶用法
 
-在 `pages` 中添加同名 `locale` 目录，例如 `pages/index` 下新增 `index.locale` ，添加翻译文件 `en-us.po`（文件名即为 `locale` ）
+#### 属性翻译
 
-- 对于文件 `index.wxml` ：
+属性翻译需要在[配置文件](#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)中添加属性白名单
 
-  ```html
-  <!I18N>
-  <!-- 启用 i18n 的声明 -->
-  <view>一些文本</view>
-  ```
+```html
+<div class="item" title="说明" exclued-attribute="说明">含属性的节点</div>
+```
 
-  如果存在英文翻译文件 `index.locale/en-us.po`：
+翻译文件：
 
-  ```
-  msgid "一些文字"
-  msgstr "Some words"
-  ```
+```po
+msgid "含属性的节点"
+msgstr "Node with attributes"
 
-  经过 i18n 预编译器后：
+msgid "说明"
+msgstr "explanation"
+```
 
-  ```html
-  <block wx:if="{{ locale === "en-us" }}">
-    <view>Some words</view>
-  </block>
-  <block wx:else>
-    <view>一些文本</view>
-  </block>
-  ```
+#### 数据绑定
 
-- 属性翻译
+需要翻译的文本块中有数据绑定，这种情况下需要用到占位符：
 
-  ```html
-  <div class="item" title="说明" exclued-attribute="说明">含属性的节点</div>
-  ```
+```html
+<view>{{ a }} 加 {{ b }} 得到 {{ a+b }}</view>
+```
 
-  翻译文件：
+翻译文件如下，注意占位符需要大写且按字母序列依次递增
 
-  ```po
-  msgid "含属性的节点"
-  msgstr "Node with attributes"
+```po
+msgid "{{A}} 加 {{B}} 得到 {{C}}"
+msgstr "Add {{A}} to {{B}} to get {{C}}"
+```
 
-  msgid "说明"
-  msgstr "explanation"
-  ```
+#### 整体翻译
 
-- 需要翻译的文本块中有数据绑定，这种情况下需要用到占位符：
+一系列子节点需要被当做一个整体来翻译，在模板中添加声明 `<!I18N translate-children>`
 
-  ```html
-  <view>{{ a }} 加 {{ b }} 得到 {{ a+b }}</view>
-  ```
+```html
+<div>
+  <!I18N translate-children>
+  我
+  <span style="color: red">爱</span>
+  你
+</div>
+```
 
-  对应的翻译文件如下，注意占位符需要大写且按字母序列依次递增
+翻译文件：
 
-  ```po
-  msgid "{{A}} 加 {{B}} 得到 {{C}}"
-  msgstr "Add {{A}} to {{B}} to get {{C}}"
-  ```
+```po
+msgid "我{{A}}你"
+msgstr "I {{A}} You"
 
-- 一系列子节点需要被当做一个整体来翻译，在模板中添加声明 `<!I18N translate-children>` 
+msgid "爱"
+msgstr "Love"
+```
 
-  ```html
-  <div>
-    <!I18N translate-children>
-    I
-    <span style="color: red">LOVE</span>
-    you
-  </div>
-  ```
+或者整体翻译：
 
-  对应的翻译文件：
+```po
+msgid "我{{A}}你"
+msgstr "愛してます"
+```
 
-  ```po
-  msgid "我{{A}}你"
-  msgstr "I {{A}} You"
+#### 全局翻译
 
-  msgid "爱"
-  msgstr "Love"
-  ```
+在 `src/locale` 目录中配置全局翻译，文件名即为 `locale`
 
-  或者整体翻译：
+可以不配置当前 `page` 的翻译文件，默认会先寻找全局翻译，且全局翻译优先级较低
 
-  ```po
-  msgid "我{{A}}你"
-  msgstr "愛してます"
-  ```
+`src/locale/en-us.po`:
+
+```
+msgid "一些文字"
+msgstr "Some words"
+```
+
+`src/pages/index/index.locale/en-us.po`:
+
+```
+msgid "一些文字"
+msgstr "[Global] Some words"
+
+msgid "全局的翻译"
+msgstr "Global translation"
+```
 
 ### 配置文件
 

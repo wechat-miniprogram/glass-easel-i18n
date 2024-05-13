@@ -1,2 +1,5 @@
 msgid "全局的翻译"
 msgstr "Global translation"
+
+msgid "一些文字"
+msgstr "[Global] Some words"
