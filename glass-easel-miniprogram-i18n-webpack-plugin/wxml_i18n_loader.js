@@ -12,13 +12,39 @@ function translateWxml(filename, source, translations, attributes) {
   }
 }
 
-function wxmlI18nLoader(source) {
+async function getPoData(localePath, translations, isGlobal) {
+  if (!fs.existsSync(localePath)) {
+    console.log('Locale files not found: ', localePath)
+  } else {
+    const localeDir = fs.readdirSync(localePath)
+    const prefix = isGlobal ? 'global.' : ''
+    const module = await import('gettext-parser')
+    const gettextParser = module.default
+    localeDir.forEach((file) => {
+      if (path.extname(file) !== '.po') return
+      const poFilePath = path.join(localePath, file)
+      const poData = fs.readFileSync(poFilePath, 'utf8')
+      const locale = path.basename(file, '.po')
+      const data = {}
+      const parsedPoData = gettextParser.po.parse(poData)
+      for (const msg of Object.values(parsedPoData.translations[''])) {
+        if (!msg.msgid || !msg.msgstr.length) {
+          continue
+        }
+        data[msg.msgid] = msg.msgstr[0]
+      }
+      translations.push(
+        `["${prefix}${locale}"]\n` +
+          Object.entries(data)
+            .map(([key, value]) => `"${key}" = "${value}"`)
+            .join('\n'),
+      )
+    })
+  }
+}
+
+async function wxmlI18nLoader(source) {
   const callback = this.async()
-  // read all translations
-  const currentFileName = path.basename(this.resourcePath, '.wxml')
-  const localeDirName = `${currentFileName}.locale`
-  const localeDir = path.join(path.dirname(this.resourcePath), localeDirName)
-  const translations = []
 
   // read i18nconfig.json to get included attributes
   let attributes = []
@@ -29,60 +55,29 @@ function wxmlI18nLoader(source) {
     i18nConfig['attributes'] && (attributes = [...i18nConfig['attributes']])
   }
 
-  fs.readdir(localeDir, (err, files) => {
-    if (err) {
-      console.error('Could find locale directory', err)
-      return callback(err)
-    }
-    if (files.length === 0) {
-      callback(null, source)
-    }
-    let completedFiles = 0
-    let poFiles = 0
-    files.forEach((file) => {
-      if (path.extname(file) === '.po') {
-        poFiles++
-      }
-    })
-    files.forEach((file) => {
-      if (path.extname(file) !== '.po') return
-      const poFilePath = path.join(localeDir, file)
-      const poData = fs.readFileSync(poFilePath, 'utf8')
-      const locale = path.basename(file, '.po')
-      const data = {}
-      import('gettext-parser')
-        .then((module) => {
-          const gettextParser = module.default
-          const parsedPoData = gettextParser.po.parse(poData)
-          for (const msg of Object.values(parsedPoData.translations[''])) {
-            if (!msg.msgid || !msg.msgstr.length) {
-              continue
-            }
-            data[msg.msgid] = msg.msgstr[0]
-          }
-          translations.push(
-            `[${locale}]\n` +
-              Object.entries(data)
-                .map(([key, value]) => `"${key}" = "${value}"`)
-                .join('\n'),
-          )
-          completedFiles++
-          if (completedFiles === poFiles) {
-            const translatedWxml = translateWxml(
-              this.resourcePath,
-              source,
-              translations.join('\n'),
-              attributes,
-            )
-            console.log(translatedWxml)
-            callback(null, translatedWxml)
-          }
-        })
-        .catch((err) => {
-          console.log(err)
-        })
-    })
-  })
+  const translations = []
+  // global locale files
+  const globalLocalePath = path.join(this.query.configPath, 'src/locale')
+  await getPoData(globalLocalePath, translations, true)
+
+  // current locale files
+  const currentFileName = path.basename(this.resourcePath, '.wxml')
+  const currentlocaleDirName = `${currentFileName}.locale`
+  const currentlocalePath = path.join(path.dirname(this.resourcePath), currentlocaleDirName)
+  await getPoData(currentlocalePath, translations, false)
+
+  if (translations.length !== 0) {
+    const translatedWxml = translateWxml(
+      this.resourcePath,
+      source,
+      translations.join('\n'),
+      attributes,
+    )
+    console.log(translatedWxml)
+    callback(null, translatedWxml)
+  } else {
+    callback(null, source)
+  }
 }
 
 module.exports = wxmlI18nLoader

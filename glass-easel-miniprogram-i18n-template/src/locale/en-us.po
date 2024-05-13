@@ -1,0 +1,2 @@
+msgid "全局的翻译"
+msgstr "Global translation"

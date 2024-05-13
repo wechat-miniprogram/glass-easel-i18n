@@ -19,7 +19,7 @@ program
       const i18nConfig = JSON.parse(i18nConfigContent)
       i18nConfig['attributes'] && (attributes = [...i18nConfig['attributes']])
     } else {
-      console.log(`Config file not found: ${file}`)
+      console.log('Config file not found')
     }
 
     if (fs.existsSync(file)) {

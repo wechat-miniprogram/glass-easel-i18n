@@ -53,11 +53,11 @@ importers:
   glass-easel-miniprogram-i18n-template:
     dependencies:
       glass-easel:
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.2
+        version: 0.5.2
       glass-easel-miniprogram-adapter:
-        specifier: ^0.4.0
-        version: 0.4.0(glass-easel@0.4.0)
+        specifier: ^0.5.2
+        version: 0.5.2(glass-easel@0.5.2)
     devDependencies:
       css-loader:
         specifier: ^7.1.1
@@ -66,8 +66,8 @@ importers:
         specifier: ^0.4.0
         version: link:../glass-easel-miniprogram-i18n-webpack-plugin
       glass-easel-miniprogram-webpack-plugin:
-        specifier: ^0.4.0
-        version: 0.4.0(glass-easel-miniprogram-adapter@0.4.0)(glass-easel@0.4.0)(webpack@5.91.0)
+        specifier: ^0.5.2
+        version: 0.5.2(glass-easel-miniprogram-adapter@0.5.2)(glass-easel@0.5.2)(webpack@5.91.0)
       less:
         specifier: ^4.2.0
         version: 4.2.0
@@ -1593,41 +1593,41 @@ packages:
       safe-buffer: 5.2.1
     dev: false
 
-  /glass-easel-miniprogram-adapter@0.4.0(glass-easel@0.4.0):
-    resolution: {integrity: sha512-gjovA92yb2O3TuI1cn1yco6+3ssFgQ6alFguHs/gRJxtUL+ybWxgHS8tItYNHNzO2oVi3tjsex+JdX2tV89e9g==}
+  /glass-easel-miniprogram-adapter@0.5.2(glass-easel@0.5.2):
+    resolution: {integrity: sha512-btXmdSYrEsL/FDZZ6lScNyzdSRejT8Bd/z+cv+OhxW/ZHXeasvBztiTHnh1lIYBdcbgmnTKkV/RCnEb3JmwCIQ==}
     peerDependencies:
-      glass-easel: 0.4.0
+      glass-easel: 0.5.2
     dependencies:
-      glass-easel: 0.4.0
+      glass-easel: 0.5.2
 
-  /glass-easel-miniprogram-webpack-plugin@0.4.0(glass-easel-miniprogram-adapter@0.4.0)(glass-easel@0.4.0)(webpack@5.91.0):
-    resolution: {integrity: sha512-JLRnal8Z72vPsSyXaqlU1mcFRjrwW3Vi/5KXJwwth5/adV9J/TN4C/FGgmNKWIZb+3xRdzimzpjHweQmL2HY7Q==}
+  /glass-easel-miniprogram-webpack-plugin@0.5.2(glass-easel-miniprogram-adapter@0.5.2)(glass-easel@0.5.2)(webpack@5.91.0):
+    resolution: {integrity: sha512-1aMHSsQmOoHZ7qEwsYnAVkbuPjMmINhZ0kk+vFxIlyk5rtXPrvNsRxniUSWgwKZupR3Vq0lSQ1yAif8emLEEwQ==}
     peerDependencies:
-      glass-easel: 0.4.0
-      glass-easel-miniprogram-adapter: 0.4.0
+      glass-easel: 0.5.2
+      glass-easel-miniprogram-adapter: 0.5.2
       webpack: ^5.85.0
     dependencies:
       chokidar: 3.6.0
-      glass-easel: 0.4.0
-      glass-easel-miniprogram-adapter: 0.4.0(glass-easel@0.4.0)
-      glass-easel-stylesheet-compiler: 0.4.0
-      glass-easel-template-compiler: 0.4.0
+      glass-easel: 0.5.2
+      glass-easel-miniprogram-adapter: 0.5.2(glass-easel@0.5.2)
+      glass-easel-stylesheet-compiler: 0.5.2
+      glass-easel-template-compiler: 0.5.2
       source-map: 0.7.4
       webpack: 5.91.0(webpack-cli@5.1.4)
       webpack-sources: 3.2.3
       webpack-virtual-modules: 0.5.0
     dev: true
 
-  /glass-easel-stylesheet-compiler@0.4.0:
-    resolution: {integrity: sha512-Kyg4V8VDcPG2N0suaoc4TGPgh1mJEHJTTcWYPx9HJAlET+T2W/z2ftjoabqhJwJ38lZR0FQrvjsqp+J66JQc/Q==}
+  /glass-easel-stylesheet-compiler@0.5.2:
+    resolution: {integrity: sha512-Nz56erikuuAaLEicPwkWQ1I2yk39ITrM+p0Mf8mdJ+1/7SJLfEW51S7P80le+mT9h0WzIZqDJfBxYSJOw4w1CQ==}
     dev: true
 
-  /glass-easel-template-compiler@0.4.0:
-    resolution: {integrity: sha512-wQfDBaMFojRXh6cCmQlxXLgxF+VLpkRf2XD/Iz16LViwE8iAB11lX3LUHHvuev5CXmPw+gF+yuHVoV6nkhjktQ==}
+  /glass-easel-template-compiler@0.5.2:
+    resolution: {integrity: sha512-gUbLKsPzLPjMhtT9/qdKmZmGu0tolzC6z63DdUsrynfasPXf3Z+YSTEpNJSjSLPtHGiVB/SnzWxmzRCrFewpvQ==}
     dev: true
 
-  /glass-easel@0.4.0:
-    resolution: {integrity: sha512-7Kkrqu0gCrRX+YOPdSz0AakPXgy6+19WOU9swoAM3orihaY4J+dYskHJRHN5lNGr+dJMyPeTfMoGdSZjTVkUBg==}
+  /glass-easel@0.5.2:
+    resolution: {integrity: sha512-DWJbBoJt6MMWiA/S7mLMDqenJT5rduCxXy6Hh9TqDbX0pEF7AnGMmZv8F6YCG+v+6eevU2lL5Ms/l4Deqs6akg==}
 
   /glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}

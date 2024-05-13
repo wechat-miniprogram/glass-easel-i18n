@@ -3,24 +3,24 @@
   "version": "0.4.0",
   "main": "src/index.ts",
   "scripts": {
-    "dev":"webpack --config webpack.config.js --watch",
+    "dev": "webpack --config webpack.config.js --watch",
     "build": "webpack --config webpack.config.js",
-    "search":"glass-easel-i18n search"
-  },
-  "dependencies": {
-    "glass-easel": "^0.4.0",
-    "glass-easel-miniprogram-adapter": "^0.4.0"
+    "search": "glass-easel-i18n search"
   },
   "devDependencies": {
-    "glass-easel-miniprogram-webpack-plugin": "^0.4.0",
+    "css-loader": "^7.1.1",
     "glass-easel-miniprogram-i18n-webpack-plugin": "^0.4.0",
+    "glass-easel-miniprogram-webpack-plugin": "^0.5.2",
     "less": "^4.2.0",
     "less-loader": "^12.2.0",
     "mini-css-extract-plugin": "^2.8.1",
     "ts-loader": "^9.5.1",
-    "css-loader": "^7.1.1",
     "typescript": "^5.4.5",
     "webpack": "^5.85.0",
     "webpack-cli": "^5.0.1"
+  },
+  "dependencies": {
+    "glass-easel": "^0.5.2",
+    "glass-easel-miniprogram-adapter": "^0.5.2"
   }
 }

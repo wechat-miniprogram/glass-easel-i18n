@@ -35,9 +35,39 @@ pub fn compile(
             return Err(format!("Failed to compile template: {}", warning));
         }
     }
-    let trans_content: TransContent = toml::from_str(&trans_source).unwrap();
-    // transform the template to support i18n
+    let mut trans_content: TransContent = toml::from_str(&trans_source).unwrap();
+    // merge the global.locale
+    fn merge_map(locale_map: &mut HashMap<String, HashMap<String, String>>) {
+        let mut to_modify = Vec::new();
+        let mut to_remove = Vec::new();
+        for (key, value) in locale_map.iter() {
+            if key.starts_with("global.") {
+                let new_key = key.replace("global.", "");
+                to_remove.push(key.clone());
+                for (msg_id, msg_str) in value.iter() {
+                    to_modify.push((new_key.clone(), msg_id.clone(), msg_str.clone()));
+                }
+            }
+        }
+        for (new_key, msg_id, msg_str) in to_modify {
+            locale_map
+                .entry(new_key)
+                .and_modify(|modify_map| {
+                    modify_map.entry(msg_id.clone()).or_insert(msg_str.clone());
+                })
+                .or_insert_with(|| {
+                    let mut insert_map = HashMap::new();
+                    insert_map.insert(msg_id, msg_str);
+                    insert_map
+                });
+        }
+        for key in to_remove {
+            locale_map.remove(&key);
+        }
+    }
+    merge_map(&mut trans_content.map);
 
+    // transform the template to support i18n
     fn contains_i18n_tag(node_list: &Vec<Node>) -> bool {
         for node in node_list {
             match node {
