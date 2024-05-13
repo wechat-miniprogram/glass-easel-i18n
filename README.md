@@ -18,7 +18,7 @@
 
 如果存在英文翻译文件 `index.locale/en-us.po`：
 
-```
+```po
 msgid "一些文字"
 msgstr "Some words"
 ```
@@ -40,7 +40,7 @@ msgstr "Some words"
 
 在 `glass-easel` 的项目中添加依赖 `glass-easel-miniprogram-i18n-webpack-loader`
 
-```shell
+```bash
 pnpm install --save-dev glass-easel-miniprogram-i18n-webpack-loader
 ```
 
@@ -139,14 +139,14 @@ msgstr "愛してます"
 
 `src/locale/en-us.po`:
 
-```
+```po
 msgid "一些文字"
 msgstr "Some words"
 ```
 
 `src/pages/index/index.locale/en-us.po`:
 
-```
+```po
 msgid "一些文字"
 msgstr "[Global] Some words"
 
@@ -182,7 +182,7 @@ msgstr "Global translation"
 
 【可选】使用 `-p` 或者 `--placeholder` 来指定输出文件中 `msgstr` 的值，默认为 “尚未翻译”
 
-```shell
+```bash
 pnpm run search -f ./src/pages/index/index.wxml
 pnpm run search -f ./src/pages/index/index.wxml -p "未翻译"
 ```
