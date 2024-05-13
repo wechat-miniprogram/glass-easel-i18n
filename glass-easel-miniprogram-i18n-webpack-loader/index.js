@@ -23,10 +23,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GlassEaselMiniprogramWxmlI18nWebpackPlugin = exports.GlassEaselMiniprogramWxmlI18nLoader = void 0;
+exports.GlassEaselMiniprogramWxmlI18nLoader = void 0;
 const path = __importStar(require("node:path"));
 exports.GlassEaselMiniprogramWxmlI18nLoader = path.join(__dirname, "wxml_i18n_loader.js");
-class GlassEaselMiniprogramWxmlI18nWebpackPlugin {
-    apply() { }
-}
-exports.GlassEaselMiniprogramWxmlI18nWebpackPlugin = GlassEaselMiniprogramWxmlI18nWebpackPlugin;

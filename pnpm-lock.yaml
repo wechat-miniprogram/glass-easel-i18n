@@ -62,9 +62,9 @@ importers:
       css-loader:
         specifier: ^7.1.1
         version: 7.1.1(webpack@5.91.0)
-      glass-easel-miniprogram-i18n-webpack-plugin:
+      glass-easel-miniprogram-i18n-webpack-loader:
         specifier: ^0.4.0
-        version: link:../glass-easel-miniprogram-i18n-webpack-plugin
+        version: link:../glass-easel-miniprogram-i18n-webpack-loader
       glass-easel-miniprogram-webpack-plugin:
         specifier: ^0.5.2
         version: 0.5.2(glass-easel-miniprogram-adapter@0.5.2)(glass-easel@0.5.2)(webpack@5.91.0)
@@ -90,7 +90,7 @@ importers:
         specifier: ^5.0.1
         version: 5.1.4(webpack@5.91.0)
 
-  glass-easel-miniprogram-i18n-webpack-plugin:
+  glass-easel-miniprogram-i18n-webpack-loader:
     dependencies:
       commander:
         specifier: ^12.0.0

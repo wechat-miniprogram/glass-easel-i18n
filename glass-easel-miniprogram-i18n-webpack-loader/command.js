@@ -8,7 +8,7 @@ const { search } = require('glass-easel-i18n')
 program
   .command('search')
   .option('-f, --file <filePath>', '需要收集的文件')
-  .option('-p, --place-holder <placeHolder>', '翻译占位')
+  .option('-p, --placeholder <placeHolder>', '翻译占位')
   .action((options) => {
     const { file, placeHolder } = options
     // read i18nconfig.json to get included attributes

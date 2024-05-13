@@ -1,7 +1,7 @@
 const path = require('path')
 const {
   GlassEaselMiniprogramWxmlI18nLoader,
-} = require('glass-easel-miniprogram-i18n-webpack-plugin')
+} = require('glass-easel-miniprogram-i18n-webpack-loader')
 const {
   GlassEaselMiniprogramWebpackPlugin,
   GlassEaselMiniprogramWxmlLoader,
