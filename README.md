@@ -4,17 +4,55 @@
 
 ## 使用指南
 
-### 项目迁移
+### 快速开始
 
-> 可参考 glass-easel-i18n/glass-easel-miniprogram-i18n-template
+添加同名 `locale` 目录，例如 `pages/index` 下新增 `index.locale` ，添加翻译文件 `en-us.po`（文件名即为 `locale` ）
 
-在 `glass-easel` 的项目中添加依赖 `glass-easel-miniprogram-i18n-webpack-loader`
+<pre>
+  - src/pages
+    - index
+      - index.locale //新增
+        - zh-hk.po
+        - en-us.po
+        - ja.po
+        - .....
+      - index.wxml
+      - index.ts
+      - index.wxss
+      - index.json
+</pre>
 
-```shell
-pnpm install --save-dev glass-easel-miniprogram-i18n-webpack-loader
+在 `index.wxml`中使用 `<!I18N>` 声明启用 `i18n` ：
+
+```html
+<!I18N>  <!-- 启用 i18n 的声明 -->
+<view>一些文本</view>
 ```
 
-在 `webpack.config.js` 中新增 `GlassEaselMiniprogramWxmlI18nLoader`
+配置翻译文件 `index.locale/en-us.po`：
+
+```po
+msgid "一些文字"
+msgstr "Some words"
+```
+
+在 `index.ts` 中增加 `locale`：
+
+``` js
+Page({
+  data: {
+    locale: 'en-us',
+  },
+  // 可配置 methods 去更改 locale
+  changeLocale() {}
+})
+```
+
+在`webpack.config.js` 中新增 `GlassEaselMiniprogramWxmlI18nLoader`
+
+```bash
+pnpm install --save-dev glass-easel-miniprogram-i18n-webpack-loader
+```
 
 ```js
 rules: [
@@ -25,7 +63,7 @@ rules: [
       GlassEaselMiniprogramWxmlLoader,
       // configPath is exposed to loader
       {
-        loader: GlassEaselMiniprogramWxmlI18nLoader,
+        loader: GlassEaselMiniprogramWxmlI18nLoader,  // 新增
         options: {
           configPath: __dirname,
         },
@@ -36,92 +74,115 @@ rules: [
 ]
 ```
 
-### 翻译文件
+### 原理说明
 
-在 `pages` 中添加同名 `locale` 目录，例如 `pages/index` 下新增 `index.locale` ，添加翻译文件 `en-us.po`（文件名即为 `locale` ）
+通过翻译词条配置将原先的模板预编译成支持 `i18n` ，例如：
 
-- 对于文件 `index.wxml` ：
+```html
+<!I18N>  <!-- 启用 i18n 的声明 -->
+<view>一些文本</view>
+```
 
-  ```html
-  <!I18N>
-  <!-- 启用 i18n 的声明 -->
+经过 `i18n` 预编译器后，可以得到：
+
+```html
+<block wx:if="{{ locale === "en-us" }}">
+  <view>Some words</view>
+</block>
+<block wx:else>
   <view>一些文本</view>
-  ```
+</block>
+```
 
-  如果存在英文翻译文件 `index.locale/en-us.po`：
+### 进阶用法
 
-  ```
-  msgid "一些文字"
-  msgstr "Some words"
-  ```
+> 可参考 glass-easel-i18n/glass-easel-miniprogram-i18n-template
 
-  经过 i18n 预编译器后：
+#### 属性翻译
 
-  ```html
-  <block wx:if="{{ locale === "en-us" }}">
-    <view>Some words</view>
-  </block>
-  <block wx:else>
-    <view>一些文本</view>
-  </block>
-  ```
+属性翻译需要在[配置文件](#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6)中添加属性白名单
 
-- 属性翻译
+```html
+<div class="item" title="说明" exclued-attribute="说明">含属性的节点</div>
+```
 
-  ```html
-  <div class="item" title="说明" exclued-attribute="说明">含属性的节点</div>
-  ```
+翻译文件：
 
-  翻译文件：
+```po
+msgid "含属性的节点"
+msgstr "Node with attributes"
 
-  ```po
-  msgid "含属性的节点"
-  msgstr "Node with attributes"
+msgid "说明"
+msgstr "explanation"
+```
 
-  msgid "说明"
-  msgstr "explanation"
-  ```
+#### 数据绑定
 
-- 需要翻译的文本块中有数据绑定，这种情况下需要用到占位符：
+需要翻译的文本块中有数据绑定，这种情况下需要用到占位符：
 
-  ```html
-  <view>{{ a }} 加 {{ b }} 得到 {{ a+b }}</view>
-  ```
+```html
+<view>{{ a }} 加 {{ b }} 得到 {{ a+b }}</view>
+```
 
-  对应的翻译文件如下，注意占位符需要大写且按字母序列依次递增
+翻译文件如下，注意占位符需要大写且按字母序列依次递增
 
-  ```po
-  msgid "{{A}} 加 {{B}} 得到 {{C}}"
-  msgstr "Add {{A}} to {{B}} to get {{C}}"
-  ```
+```po
+msgid "{{A}} 加 {{B}} 得到 {{C}}"
+msgstr "Add {{A}} to {{B}} to get {{C}}"
+```
 
-- 一系列子节点需要被当做一个整体来翻译，在模板中添加声明 `<!I18N translate-children>` 
+#### 整体翻译
 
-  ```html
-  <div>
-    <!I18N translate-children>
-    I
-    <span style="color: red">LOVE</span>
-    you
-  </div>
-  ```
+一系列子节点需要被当做一个整体来翻译，在模板中添加声明 `<!I18N translate-children>`
 
-  对应的翻译文件：
+```html
+<div>
+  <!I18N translate-children>
+  我
+  <span style="color: red">爱</span>
+  你
+</div>
+```
 
-  ```po
-  msgid "我{{A}}你"
-  msgstr "I {{A}} You"
+翻译文件：
 
-  msgid "爱"
-  msgstr "Love"
-  ```
+```po
+msgid "我{{A}}你"
+msgstr "I {{A}} You"
 
-  或者整体翻译：
+msgid "爱"
+msgstr "Love"
+```
 
-  ```po
-  msgid "我{{A}}你"
-  msgstr "愛してます"
-  ```
+或者整体翻译：
+
+```po
+msgid "我{{A}}你"
+msgstr "愛してます"
+```
+
+#### 全局翻译
+
+在 `src/locale` 目录中配置全局翻译，文件名即为 `locale`
+
+可以不配置当前 `page` 的翻译文件，默认会先寻找全局翻译，且全局翻译优先级较低
+
+`src/locale/en-us.po`:
+
+```po
+msgid "一些文字"
+msgstr "Some words"
+```
+
+`src/pages/index/index.locale/en-us.po`:
+
+```po
+msgid "一些文字"
+msgstr "[Global] Some words"
+
+msgid "全局的翻译"
+msgstr "Global translation"
+```
 
 ### 配置文件
 
@@ -151,7 +212,7 @@ rules: [
 
 【可选】使用 `-p` 或者 `--placeholder` 来指定输出文件中 `msgstr` 的值，默认为 “尚未翻译”
 
-```shell
+```bash
 pnpm run search -f ./src/pages/index/index.wxml
 pnpm run search -f ./src/pages/index/index.wxml -p "未翻译"
 ```
