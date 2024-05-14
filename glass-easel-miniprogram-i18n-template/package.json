@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "css-loader": "^7.1.1",
-    "glass-easel-miniprogram-i18n-webpack-loader": "^0.4.0",
+    "glass-easel-miniprogram-i18n-webpack-loader": "workspace:*",
     "glass-easel-miniprogram-webpack-plugin": "^0.5.2",
     "less": "^4.2.0",
     "less-loader": "^12.2.0",

@@ -63,7 +63,7 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1(webpack@5.91.0)
       glass-easel-miniprogram-i18n-webpack-loader:
-        specifier: ^0.4.0
+        specifier: workspace:*
         version: link:../glass-easel-miniprogram-i18n-webpack-loader
       glass-easel-miniprogram-webpack-plugin:
         specifier: ^0.5.2
@@ -99,7 +99,7 @@ importers:
         specifier: ^8.0.0
         version: 8.0.0
       glass-easel-i18n:
-        specifier: ^0.4.0
+        specifier: workspace:*
         version: link:../glass-easel-i18n
       webpack:
         specifier: ^5.85.0
