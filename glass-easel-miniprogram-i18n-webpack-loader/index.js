@@ -25,4 +25,4 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GlassEaselMiniprogramWxmlI18nLoader = void 0;
 const path = __importStar(require("node:path"));
-exports.GlassEaselMiniprogramWxmlI18nLoader = path.join(__dirname, "wxml_i18n_loader.js");
+exports.GlassEaselMiniprogramWxmlI18nLoader = path.join(__dirname, 'wxml_i18n_loader.js');

@@ -16,5 +16,8 @@ msgstr "未翻译"
 msgid "{{A}} 加 {{B}} 得到 {{C}}" 
 msgstr "未翻译"
 
+msgid "全局的翻译" 
+msgstr "未翻译"
+
 msgid "切换语言" 
 msgstr "未翻译"

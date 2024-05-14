@@ -10,7 +10,7 @@ program
   .option('-f, --file <filePath>', '需要收集的文件')
   .option('-p, --placeholder <placeHolder>', '翻译占位')
   .action((options) => {
-    const { file, placeHolder } = options
+    const { file, placeholder } = options
     // read i18nconfig.json to get included attributes
     let attributes = []
     const configPath = path.join(process.cwd(), 'i18nconfig.json')
@@ -26,7 +26,7 @@ program
 
     if (fs.existsSync(file)) {
       const source = fs.readFileSync(file, 'utf-8')
-      const untranslated = placeHolder ?? '尚未翻译'
+      const untranslated = placeholder ?? '尚未翻译'
       const result = search(file, source, attributes)
       if (result.isSuccess()) {
         const terms = result
