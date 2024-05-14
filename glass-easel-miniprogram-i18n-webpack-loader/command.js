@@ -17,14 +17,16 @@ program
     if (fs.existsSync(configPath)) {
       const i18nConfigContent = fs.readFileSync(configPath, 'utf-8')
       const i18nConfig = JSON.parse(i18nConfigContent)
-      i18nConfig['attributes'] && (attributes = [...i18nConfig['attributes']])
+      if ('attributes' in i18nConfig && Array.isArray(i18nConfig.attributes)) {
+        attributes = [...i18nConfig.attributes]
+      }
     } else {
       console.log('Config file not found')
     }
 
     if (fs.existsSync(file)) {
       const source = fs.readFileSync(file, 'utf-8')
-      const untranslated = placeHolder ? placeHolder : '尚未翻译'
+      const untranslated = placeHolder ?? '尚未翻译'
       const result = search(file, source, attributes)
       if (result.isSuccess()) {
         const terms = result
@@ -33,6 +35,7 @@ program
           .join('\n\n')
         fs.writeFileSync(path.join(path.dirname(file), 'untranslated.po'), terms)
       } else {
+        console.log('search untranslated terms error')
       }
     } else {
       console.log(`Wxml file not found: ${file}`)

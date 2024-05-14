@@ -7,9 +7,8 @@ function translateWxml(filename, source, translations, attributes) {
   const result = compile(filename, source, translations, attributes)
   if (result.isSuccess()) {
     return result.getOutput()
-  } else {
-    return source
   }
+  return source
 }
 
 async function getPoData(localePath, translations, isGlobal) {
@@ -27,17 +26,19 @@ async function getPoData(localePath, translations, isGlobal) {
       const locale = path.basename(file, '.po')
       const data = {}
       const parsedPoData = gettextParser.po.parse(poData)
-      for (const msg of Object.values(parsedPoData.translations[''])) {
+      Object.values(parsedPoData.translations['']).forEach((msg) => {
         if (!msg.msgid || !msg.msgstr.length) {
-          continue
+          return
         }
         data[msg.msgid] = msg.msgstr[0]
-      }
+      })
       translations.push(
-        `["${prefix}${locale}"]\n` +
-          Object.entries(data)
-            .map(([key, value]) => `"${key}" = "${value}"`)
-            .join('\n'),
+        `
+        ["${prefix}${locale}"]
+        ${Object.entries(data)
+          .map(([key, value]) => `"${key}" = "${value}"`)
+          .join('\n')}
+        `,
       )
     })
   }
@@ -52,7 +53,9 @@ async function wxmlI18nLoader(source) {
   if (fs.existsSync(configPath)) {
     const i18nConfigContent = fs.readFileSync(configPath, 'utf-8')
     const i18nConfig = JSON.parse(i18nConfigContent)
-    i18nConfig['attributes'] && (attributes = [...i18nConfig['attributes']])
+    if ('attributes' in i18nConfig && Array.isArray(i18nConfig.attributes)) {
+      attributes = [...i18nConfig.attributes]
+    }
   }
 
   const translations = []

@@ -1,7 +1,7 @@
 [package]
 name = "glass-easel-i18n"
 version = "0.4.0"
-authors = ["LastLeaf <bqfu@163.com>"]
+authors = ["LastLeaf <bqfu@163.com>", "BitterGourd <bittergourd1020@gmail.com>"]
 description = "Non-invasive I18n Support for glass-easel"
 license = "MIT"
 documentation = "https://github.com/wechat-miniprogram/glass-easel-i18n"
