@@ -145,7 +145,7 @@ if (
 }
 if (
   childProcess.spawnSync('npm', ['run', 'build'], {
-    cwd: 'glass-easel-miniprogram-template',
+    cwd: 'glass-easel-miniprogram-i18n-template',
     stdio: 'inherit',
   }).status !== 0
 ) {
