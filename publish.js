@@ -107,7 +107,7 @@ if (gitStatusRes.status !== 0 || gitStatusRes.stdout.length > 0) {
 // pnpm install
 console.info('Run pnpm install')
 if (childProcess.spawnSync('pnpm', ['install'], { stdio: 'inherit' }).status !== 0) {
-  throw new Error('failed to clean glass-easel dist')
+  throw new Error('failed to excute pnpm install')
 }
 
 // execute wasm-pack
@@ -141,7 +141,7 @@ if (
   childProcess.spawnSync('rm', ['-rf', 'dist'], { cwd: 'glass-easel-miniprogram-i18n-template' })
     .status !== 0
 ) {
-  throw new Error('failed to clean glass-easel dist')
+  throw new Error('failed to clean glass-easel-i18n-template dist')
 }
 if (
   childProcess.spawnSync('npm', ['run', 'build'], {
