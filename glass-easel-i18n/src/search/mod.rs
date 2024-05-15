@@ -133,6 +133,26 @@ pub fn search(
                             search_terms(children, terms_vec, included_attributes);
                         }
                     }
+                    ElementKind::If {
+                        branches,
+                        else_branch,
+                    } => {
+                        for branch in branches {
+                            search_terms(&branch.2, terms_vec, included_attributes)
+                        }
+                        match else_branch {
+                            Some((_, ref nodes)) => {
+                                search_terms(nodes, terms_vec, included_attributes)
+                            }
+                            _ => {}
+                        }
+                    }
+                    ElementKind::For { children, .. } => {
+                        search_terms(children, terms_vec, included_attributes)
+                    }
+                    ElementKind::Pure { children, .. } => {
+                        search_terms(children, terms_vec, included_attributes)
+                    }
                     _ => {}
                 },
                 Node::Text(value) => {
@@ -142,6 +162,13 @@ pub fn search(
             }
         }
     }
+    // template.content
     search_terms(&template.content, &mut output, &included_attributes);
+
+    // sub_templates
+    for sub_template in &template.globals.sub_templates {
+        search_terms(&sub_template.1, &mut output, &included_attributes);
+    }
+
     Ok(UntranslatedTerms { output })
 }

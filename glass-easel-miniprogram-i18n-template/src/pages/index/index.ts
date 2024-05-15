@@ -3,6 +3,8 @@ Page({
     locale: 'en-us',
     a: 1,
     b: 2,
+    status: 1,
+    arr: ['item1', 'item2', 'item3'],
   },
   changeLocale() {
     if (this.data.locale === 'en-us') {

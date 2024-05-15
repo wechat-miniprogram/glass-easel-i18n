@@ -184,6 +184,18 @@ msgid "全局的翻译"
 msgstr "Global translation"
 ```
 
+#### 模板引用
+
+如果使用[模板引用](https://github.com/wechat-miniprogram/glass-easel/blob/master/glass-easel/guide/zh_CN/interaction/template_import.md)语法，需要在模板中传入 `locale`：
+
+```html
+<template name="shared-template-slice">
+  <div class="item"> {{ a }} + {{ b }} = {{ a+b }} </div>
+  <div class="item">template里的一些文字</div>
+</template>
+<template is="shared-template-slice" data="{{ a: 3, b: 4, locale}}"></template>
+```
+
 ### 配置文件
 
 项目根目录下新增 `i18nconfig.json`，写入需要被翻译的属性名：

@@ -4,4 +4,12 @@
 <div class="item"><!I18N translate-children>我<span style="color: red">爱</span>你</div>
 <div class="item">{{ a }} 加 {{ b }} 得到 {{ a+b }}</div>
 <div class="item">全局的翻译</div>
+<div class="item" wx:if="{{status === 1}}">直播中</div>
+<div class="item" wx:for="{{ arr }}">数组的第 {{ index }} 项是 {{ item }}</div>
+<template name="shared-template-slice">
+    <div class="item"> {{a}} + {{b}} = {{a+b}} </div>
+    <div class="item">template里的一些文字</div>
+</template>
+<block><div class="item">block中的一些文字</div></block>
+<template is="shared-template-slice" data="{{ a: 3, b: 4, locale}}"></template>
 <div class="button" bind:tap="changeLocale">切换语言</div>

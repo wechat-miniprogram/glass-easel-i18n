@@ -16,3 +16,18 @@ msgstr "未翻译"
 msgid "{{A}} 加 {{B}} 得到 {{C}}"
 msgstr "未翻译"
 
+msgid "直播中"
+msgstr "未翻译"
+
+msgid "数组的第 {{A}} 项是 {{B}}"
+msgstr "未翻译"
+
+msgid "block中的一些文字"
+msgstr "未翻译"
+
+msgid " {{A}} + {{B}} = {{C}} "
+msgstr "未翻译"
+
+msgid "template里的一些文字"
+msgstr "未翻译"
+

@@ -15,3 +15,15 @@ msgstr "Love"
 
 msgid "{{A}} 加 {{B}} 得到 {{C}}"
 msgstr "Add {{A}} to {{B}} to get {{C}}"
+
+msgid "直播中" 
+msgstr "In live broadcast"
+
+msgid "数组的第 {{A}} 项是 {{B}}" 
+msgstr "The {{A}}th item of the array is {{B}}"
+
+msgid "block中的一些文字" 
+msgstr "Some text in block"
+
+msgid "template里的一些文字" 
+msgstr "Some text in template"

@@ -5,6 +5,7 @@
 "我{{A}}你" = "I {{A}} You"
 "爱" = "Love"
 "{{A}} 加 {{B}} 得到 {{C}}" = "Add {{A}} to {{B}} to get {{C}}"
+"template里的一些文字" = "Some text in template"
 
 [ja]
 "一些文字" = "いくつかのテキスト"

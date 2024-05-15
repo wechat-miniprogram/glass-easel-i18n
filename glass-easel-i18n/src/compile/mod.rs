@@ -372,6 +372,26 @@ pub fn compile(
                         }
                         translate(children, trans_content_map, included_attributes);
                     }
+                    ElementKind::If {
+                        branches,
+                        else_branch,
+                    } => {
+                        for branch in branches {
+                            translate(&mut branch.2, trans_content_map, included_attributes)
+                        }
+                        match else_branch {
+                            Some((_, ref mut nodes)) => {
+                                translate(nodes, trans_content_map, included_attributes)
+                            }
+                            _ => {}
+                        }
+                    }
+                    ElementKind::For { children, .. } => {
+                        translate(children, trans_content_map, included_attributes)
+                    }
+                    ElementKind::Pure { children, .. } => {
+                        translate(children, trans_content_map, included_attributes)
+                    }
                     _ => {}
                 },
                 Node::Text(value) => {
@@ -381,16 +401,15 @@ pub fn compile(
             }
         }
     }
-
-    if contains_i18n_tag(&template.content) {
-        // Get the attributes that need to be translated
-        println!("{:#?}", included_attributes);
-        // Element::IF has two children: branches and else_branch
+    fn translate_template(
+        template: Vec<Node>,
+        trans_content: &TransContent,
+        included_attributes: &Vec<String>,
+    ) -> Element {
         let mut branches: Vec<(Range<Position>, Value, Vec<Node>)> = vec![];
-        let branch_template = remove_i18n_tag(&template.content);
-        let branch_position = get_first_child_position(&template.content).unwrap();
+        let branch_position = get_first_child_position(&template).unwrap();
         for (lang, trans_content_map) in trans_content.map.iter() {
-            let mut template_item = branch_template.clone();
+            let mut template_item = template.clone();
             let eq_full = Box::new(Expression::EqFull {
                 left: Box::new(Expression::DataField {
                     name: "locale".into(),
@@ -407,12 +426,10 @@ pub fn compile(
                 double_brace_location: (branch_position.clone(), branch_position.clone()),
                 binding_map_keys: None,
             };
-            translate(&mut template_item, trans_content_map, &included_attributes);
+            translate(&mut template_item, trans_content_map, included_attributes);
             branches.push((branch_position.clone(), branch_value, template_item));
         }
-
-        // origin template only warpped with <block wx:else> </block> and is unnecessary to be translated by i18n
-        let mut else_branch_template = branch_template.clone();
+        let mut else_branch_template = template.clone();
         remove_i18n_translate_children(&mut else_branch_template);
         let else_branch = Some((branch_position.clone(), else_branch_template));
         let template_i18n = Element {
@@ -424,7 +441,24 @@ pub fn compile(
             close_location: branch_position.clone(),
             end_tag_location: Some((branch_position.clone(), branch_position)),
         };
-        template.content = vec![Node::Element(template_i18n)];
+        template_i18n
+    }
+
+    if contains_i18n_tag(&template.content) {
+        // template.content
+        let branch_template = remove_i18n_tag(&template.content);
+        let template_content_i18n =
+            translate_template(branch_template, &trans_content, &included_attributes);
+        template.content = vec![Node::Element(template_content_i18n)];
+
+        // sub_templates
+        for sub_template in &mut template.globals.sub_templates {
+            // search_terms(&sub_template.1, &mut output, &included_attributes);
+            let sub_template_branch = sub_template.1.clone();
+            let sub_template_i18n =
+                translate_template(sub_template_branch, &trans_content, &included_attributes);
+            sub_template.1 = vec![Node::Element(sub_template_i18n)]
+        }
     }
 
     // stringify the template

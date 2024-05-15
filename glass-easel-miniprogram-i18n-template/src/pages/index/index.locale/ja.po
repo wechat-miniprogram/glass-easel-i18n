@@ -12,3 +12,15 @@ msgstr "愛してます"
 
 msgid "{{A}} 加 {{B}} 得到 {{C}}"
 msgstr "{{A}} を {{B}} に追加すると、{{C}} が得られます"
+
+msgid "直播中" 
+msgstr "ライブブロードキャスト"
+
+msgid "数组的第 {{A}} 项是 {{B}}" 
+msgstr "配列の {{A}} 番目の項目は {{B}} です"
+
+msgid "block中的一些文字" 
+msgstr "ブロック内の一部のテキスト"
+
+msgid "template里的一些文字" 
+msgstr "テンプレート内のテキスト"
