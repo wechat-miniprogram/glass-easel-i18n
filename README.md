@@ -217,6 +217,13 @@ pnpm run search -f ./src/pages/index/index.wxml
 pnpm run search -f ./src/pages/index/index.wxml -p "未翻译"
 ```
 
+如果使用 `npm` 作为包管理工具需要添加 `--` ：
+
+```bash
+npm run search -- -f ./src/pages/index/index.wxml
+npm run search -- -f ./src/pages/index/index.wxml -p "未翻译"
+```
+
 在 `-f` 指定的 `wxml` 文件的同级目录下会输出 `untranslated.po`
 
 ## LICENSE
