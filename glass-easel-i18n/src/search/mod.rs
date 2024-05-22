@@ -170,5 +170,8 @@ pub fn search(
         search_terms(&sub_template.1, &mut output, &included_attributes);
     }
 
+    // splice empty string
+    output.retain(|s| !s.trim().is_empty());
+
     Ok(UntranslatedTerms { output })
 }
