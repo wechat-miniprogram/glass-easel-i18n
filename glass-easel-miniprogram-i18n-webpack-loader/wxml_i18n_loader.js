@@ -76,7 +76,6 @@ async function wxmlI18nLoader(source) {
       translations.join('\n'),
       attributes,
     )
-    console.log(translatedWxml)
     callback(null, translatedWxml)
   } else {
     callback(null, source)
