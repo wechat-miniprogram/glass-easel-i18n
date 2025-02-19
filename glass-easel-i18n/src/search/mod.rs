@@ -1,5 +1,9 @@
 use super::contains_i18n_translate_children;
-use glass_easel_template_compiler::parse::{expr::Expression, parse, tag::{ElementKind, Node, NormalAttribute, Value}};
+use glass_easel_template_compiler::parse::{
+    expr::Expression,
+    parse,
+    tag::{ElementKind, Node, NormalAttribute, Value},
+};
 
 pub struct UntranslatedTerms {
     pub output: Vec<String>,

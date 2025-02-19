@@ -84,8 +84,7 @@ fn main() -> ExitCode {
                     println!("{:#?}", untranslated_terms.output);
                     let mut po_terms = String::new();
                     for term in untranslated_terms.output {
-                        let po_term =
-                            format!("msgid \"{}\"\nmsgstr \"{}\"\n\n", term, placeholder);
+                        let po_term = format!("msgid \"{}\"\nmsgstr \"{}\"\n\n", term, placeholder);
                         po_terms.push_str(&po_term);
                     }
                     println!("{}", po_terms);

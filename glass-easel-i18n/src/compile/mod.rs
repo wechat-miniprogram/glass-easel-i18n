@@ -2,7 +2,12 @@ use crate::{has_i18n_translate_children, is_i18n_tag, parse_additional_template}
 
 use super::contains_i18n_translate_children;
 use glass_easel_template_compiler::{
-    parse::{expr::Expression, parse, tag::{Comment, Element, ElementKind, Node, NormalAttribute, Value}, Position, TemplateStructure},
+    parse::{
+        expr::Expression,
+        parse,
+        tag::{Comment, Element, ElementKind, Node, NormalAttribute, Value},
+        Position, TemplateStructure,
+    },
     stringify::{Stringifier, Stringify},
 };
 use regex::Regex;
@@ -89,9 +94,10 @@ pub fn compile(
 
     fn remove_i18n_tag(node_list: &Vec<Node>) -> Vec<Node> {
         let mut new_list = node_list.clone();
-        if let Some(pos) = new_list.iter().position(
-            |node| matches!(node, Node::UnknownMetaTag(tag, ..) if is_i18n_tag(tag)),
-        ) {
+        if let Some(pos) = new_list
+            .iter()
+            .position(|node| matches!(node, Node::UnknownMetaTag(tag, ..) if is_i18n_tag(tag)))
+        {
             new_list.remove(pos);
         }
         new_list
@@ -141,7 +147,11 @@ pub fn compile(
                     *value = translation.into();
                 }
             }
-            Value::Dynamic { ref mut expression, double_brace_location, .. } => {
+            Value::Dynamic {
+                ref mut expression,
+                double_brace_location,
+                ..
+            } => {
                 fn split_expression(
                     expr: &Expression,
                     expr_vec: &mut Vec<String>,
@@ -255,7 +265,10 @@ pub fn compile(
         }
     }
 
-    fn translate_option_value(value: &mut Option<Value>, trans_content_map: &HashMap<String, String>) {
+    fn translate_option_value(
+        value: &mut Option<Value>,
+        trans_content_map: &HashMap<String, String>,
+    ) {
         if let Some(value) = value {
             translate_value(value, trans_content_map);
         }
@@ -303,7 +316,9 @@ pub fn compile(
                 }
             }
         }
-        let Some(first_text_node) = first_text_node else { return };
+        let Some(first_text_node) = first_text_node else {
+            return;
+        };
         let mut text_str = text_vec.join("");
         if let Some(translation) = trans_content_map.get(&text_str) {
             text_str = translation.clone();
@@ -321,7 +336,9 @@ pub fn compile(
                         .push(placeholder_map.get(&potential_placeholder).unwrap().clone());
                 } else {
                     let mut static_text = first_text_node.clone();
-                    let Node::Text(Value::Static { ref mut value, .. }) = static_text else { unreachable!() };
+                    let Node::Text(Value::Static { ref mut value, .. }) = static_text else {
+                        unreachable!()
+                    };
                     *value = item.into();
                     new_node_list.push(static_text);
                 }
@@ -348,7 +365,9 @@ pub fn compile(
                 Value::Static { location, .. } => {
                     position = Some(location.clone());
                 }
-                _ => { return None; }
+                _ => {
+                    return None;
+                }
             },
             Node::Comment(x) => {
                 position = Some(x.location.clone());
@@ -356,7 +375,9 @@ pub fn compile(
             Node::UnknownMetaTag(x) => {
                 position = Some(x.location.clone());
             }
-            _ => { return None; }
+            _ => {
+                return None;
+            }
         }
         position
     }
@@ -433,10 +454,8 @@ pub fn compile(
                 }),
                 location: branch_position.clone(),
             });
-            let branch_value = Value::new_expression(
-                eq_full,
-                (branch_position.clone(), branch_position.clone()),
-            );
+            let branch_value =
+                Value::new_expression(eq_full, (branch_position.clone(), branch_position.clone()));
             translate(&mut template_item, trans_content_map, included_attributes);
             branches.push((branch_position.clone(), branch_value, template_item));
         }
@@ -445,8 +464,11 @@ pub fn compile(
         let else_branch = Some((branch_position.clone(), else_branch_template));
 
         // generate a new node
-        let mut if_block_template = parse_additional_template(r#"<block wx:if="" /><block wx:else="" />"#);
-        let Node::Element(mut if_block) = if_block_template.content.pop().unwrap() else { panic!() };
+        let mut if_block_template =
+            parse_additional_template(r#"<block wx:if="" /><block wx:else="" />"#);
+        let Node::Element(mut if_block) = if_block_template.content.pop().unwrap() else {
+            panic!()
+        };
         if_block.tag_location.start = (branch_position.clone(), branch_position.clone());
         if_block.tag_location.close = branch_position.clone();
         if_block.tag_location.end = Some((branch_position.clone(), branch_position.clone()));
@@ -454,7 +476,10 @@ pub fn compile(
             branches: new_branches,
             else_branch: new_else_branch,
             ..
-        } = &mut if_block.kind else { panic!() };
+        } = &mut if_block.kind
+        else {
+            panic!()
+        };
         *new_branches = branches;
         *new_else_branch = else_branch;
 

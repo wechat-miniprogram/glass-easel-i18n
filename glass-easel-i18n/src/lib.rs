@@ -1,4 +1,7 @@
-use glass_easel_template_compiler::parse::{tag::{Node, UnknownMetaTag, Value}, Template};
+use glass_easel_template_compiler::parse::{
+    tag::{Node, UnknownMetaTag, Value},
+    Template,
+};
 
 mod compile;
 mod js_bindings;
@@ -17,10 +20,13 @@ fn is_i18n_tag(tag: &UnknownMetaTag) -> bool {
 }
 
 fn get_i18n_attr_value<'a>(tag: &'a UnknownMetaTag, attr_name: &str) -> Option<Option<&'a Value>> {
-    if !is_i18n_tag(tag) { return None; }
-    tag.attributes.iter().find(|x| {
-        x.colon_separated_name.len() == 1 && x.colon_separated_name[0].name == attr_name
-    }).map(|x| x.value.as_ref())
+    if !is_i18n_tag(tag) {
+        return None;
+    }
+    tag.attributes
+        .iter()
+        .find(|x| x.colon_separated_name.len() == 1 && x.colon_separated_name[0].name == attr_name)
+        .map(|x| x.value.as_ref())
 }
 
 fn has_i18n_translate_children(tag: &UnknownMetaTag) -> bool {
