@@ -1,9 +1,8 @@
+use crate::{has_i18n_translate_children, is_i18n_tag, parse_additional_template};
+
 use super::contains_i18n_translate_children;
 use glass_easel_template_compiler::{
-    parse::expr::Expression,
-    parse::parse,
-    parse::tag::{Attribute, Element, ElementKind, Node, Value},
-    parse::Position,
+    parse::{expr::Expression, parse, tag::{Comment, Element, ElementKind, Node, NormalAttribute, Value}, Position, TemplateStructure},
     stringify::{Stringifier, Stringify},
 };
 use regex::Regex;
@@ -22,11 +21,16 @@ pub struct TransContent {
     pub map: HashMap<String, HashMap<String, String>>,
 }
 
+#[derive(Debug)]
+pub struct OrderedTransContent {
+    pub map: Vec<(String, HashMap<String, String>)>,
+}
+
 pub fn compile(
     path: &str,
     source: &str,
     trans_source: &str,
-    included_attributes: Vec<String>,
+    included_attributes: &[String],
 ) -> Result<CompiledTemplate, String> {
     // parse the template
     let (mut template, parse_state) = parse(path, source);
@@ -72,7 +76,7 @@ pub fn compile(
         for node in node_list {
             match node {
                 Node::UnknownMetaTag(tag, ..) => {
-                    if tag.starts_with("I18N") {
+                    if is_i18n_tag(tag) {
                         return true;
                     }
                     break;
@@ -86,7 +90,7 @@ pub fn compile(
     fn remove_i18n_tag(node_list: &Vec<Node>) -> Vec<Node> {
         let mut new_list = node_list.clone();
         if let Some(pos) = new_list.iter().position(
-            |node| matches!(node, Node::UnknownMetaTag(tag, ..) if tag.starts_with("I18N")),
+            |node| matches!(node, Node::UnknownMetaTag(tag, ..) if is_i18n_tag(tag)),
         ) {
             new_list.remove(pos);
         }
@@ -94,17 +98,23 @@ pub fn compile(
     }
 
     fn remove_i18n_translate_children(node_list: &mut Vec<Node>) {
-        node_list.iter_mut().for_each(|node| {
+        fn rec(node: &mut Node) {
+            let should_remove = match node {
+                Node::UnknownMetaTag(tag, ..) if has_i18n_translate_children(tag) => true,
+                _ => false,
+            };
+            if should_remove {
+                *node = Node::Comment(Comment::new("", node.location()));
+            }
             if let Node::Element(element) = node {
-                if let ElementKind::Normal { children, .. } = &mut element.kind {
-                    remove_i18n_translate_children(children);
+                for child in element.iter_children_mut() {
+                    rec(child);
                 }
             }
-        });
-        node_list.retain(|node| match node {
-            Node::UnknownMetaTag(tag, ..) if tag == "I18N translate-children" => false,
-            _ => true,
-        })
+        }
+        for node in node_list {
+            rec(node);
+        }
     }
 
     fn split_translated_str(translated_str: String) -> Vec<String> {
@@ -131,11 +141,7 @@ pub fn compile(
                     *value = translation.into();
                 }
             }
-            Value::Dynamic {
-                expression,
-                double_brace_location,
-                binding_map_keys,
-            } => {
+            Value::Dynamic { ref mut expression, double_brace_location, .. } => {
                 fn split_expression(
                     expr: &Expression,
                     expr_vec: &mut Vec<String>,
@@ -242,25 +248,27 @@ pub fn compile(
                             })),
                         })
                         .unwrap();
-                    let translated_dynamic_value = Value::Dynamic {
-                        expression: translated_expression,
-                        double_brace_location: double_brace_location.clone(),
-                        binding_map_keys: binding_map_keys.clone(),
-                    };
-                    *value = translated_dynamic_value;
+                    *expression = translated_expression;
                 }
             }
+            _ => {}
+        }
+    }
+
+    fn translate_option_value(value: &mut Option<Value>, trans_content_map: &HashMap<String, String>) {
+        if let Some(value) = value {
+            translate_value(value, trans_content_map);
         }
     }
 
     fn translate_attribute(
-        attributes: &mut Vec<Attribute>,
+        attributes: &mut Vec<NormalAttribute>,
         trans_content_map: &HashMap<String, String>,
-        included_attributes: &Vec<String>,
+        included_attributes: &[String],
     ) {
         for attribute in attributes {
             if included_attributes.contains(&attribute.name.name.to_string()) {
-                translate_value(&mut attribute.value, trans_content_map)
+                translate_option_value(&mut attribute.value, trans_content_map)
             }
         }
     }
@@ -270,21 +278,21 @@ pub fn compile(
         trans_content_map: &HashMap<String, String>,
     ) {
         if let Some(pos) = node_list.iter().position(
-            |node| matches!(node, Node::UnknownMetaTag(tag, ..) if tag == "I18N translate-children"),
+            |node| matches!(node, Node::UnknownMetaTag(tag, ..) if has_i18n_translate_children(tag)),
         ) {
             node_list.remove(pos);
         }
         let mut text_vec: Vec<String> = Vec::new();
         let mut placehoder_char = 'A';
         let mut placeholder_map: HashMap<char, Node> = HashMap::new();
-        let mut node_location: Option<Range<Position>> = None;
+        let mut first_text_node: Option<Node> = None;
         for node in node_list.into_iter() {
             match node {
                 Node::Text(value) => {
-                    if let Value::Static { value, location } = value {
+                    if let Value::Static { value, .. } = value {
                         text_vec.push(value.trim().to_string());
-                        if let None = node_location {
-                            node_location = Some(location.clone());
+                        if let None = first_text_node {
+                            first_text_node = Some((*node).clone());
                         }
                     }
                 }
@@ -295,6 +303,7 @@ pub fn compile(
                 }
             }
         }
+        let Some(first_text_node) = first_text_node else { return };
         let mut text_str = text_vec.join("");
         if let Some(translation) = trans_content_map.get(&text_str) {
             text_str = translation.clone();
@@ -311,10 +320,9 @@ pub fn compile(
                     new_node_list
                         .push(placeholder_map.get(&potential_placeholder).unwrap().clone());
                 } else {
-                    let static_text = Node::Text(Value::Static {
-                        value: item.into(),
-                        location: node_location.clone().unwrap(),
-                    });
+                    let mut static_text = first_text_node.clone();
+                    let Node::Text(Value::Static { ref mut value, .. }) = static_text else { unreachable!() };
+                    *value = item.into();
                     new_node_list.push(static_text);
                 }
             }
@@ -325,9 +333,9 @@ pub fn compile(
     // the Position of else_branch or branches just placed by the position of the template's first child
     fn get_first_child_position(template: &Vec<Node>) -> Option<Range<Position>> {
         let position: Option<Range<Position>>;
-        match &template[0] {
+        match template.get(0)? {
             Node::Element(element) => {
-                position = Some(element.close_location.clone());
+                position = Some(element.tag_location.close.clone());
             }
             Node::Text(value) => match value {
                 Value::Dynamic {
@@ -340,13 +348,15 @@ pub fn compile(
                 Value::Static { location, .. } => {
                     position = Some(location.clone());
                 }
+                _ => { return None; }
             },
-            Node::Comment(_, location) => {
-                position = Some(location.clone());
+            Node::Comment(x) => {
+                position = Some(x.location.clone());
             }
-            Node::UnknownMetaTag(_, location) => {
-                position = Some(location.clone());
+            Node::UnknownMetaTag(x) => {
+                position = Some(x.location.clone());
             }
+            _ => { return None; }
         }
         position
     }
@@ -354,7 +364,7 @@ pub fn compile(
     fn translate(
         node_list: &mut Vec<Node>,
         trans_content_map: &HashMap<String, String>,
-        included_attributes: &Vec<String>,
+        included_attributes: &[String],
     ) {
         for node in node_list {
             match node {
@@ -375,6 +385,7 @@ pub fn compile(
                     ElementKind::If {
                         branches,
                         else_branch,
+                        ..
                     } => {
                         for branch in branches {
                             translate(&mut branch.2, trans_content_map, included_attributes)
@@ -403,11 +414,12 @@ pub fn compile(
     }
     fn translate_template(
         template: Vec<Node>,
-        trans_content: &TransContent,
-        included_attributes: &Vec<String>,
+        trans_content: &OrderedTransContent,
+        included_attributes: &[String],
     ) -> Element {
+        // generate branch content
         let mut branches: Vec<(Range<Position>, Value, Vec<Node>)> = vec![];
-        let branch_position = get_first_child_position(&template).unwrap();
+        let branch_position = get_first_child_position(&template).unwrap_or_default();
         for (lang, trans_content_map) in trans_content.map.iter() {
             let mut template_item = template.clone();
             let eq_full = Box::new(Expression::EqFull {
@@ -421,30 +433,40 @@ pub fn compile(
                 }),
                 location: branch_position.clone(),
             });
-            let branch_value = Value::Dynamic {
-                expression: eq_full,
-                double_brace_location: (branch_position.clone(), branch_position.clone()),
-                binding_map_keys: None,
-            };
+            let branch_value = Value::new_expression(
+                eq_full,
+                (branch_position.clone(), branch_position.clone()),
+            );
             translate(&mut template_item, trans_content_map, included_attributes);
             branches.push((branch_position.clone(), branch_value, template_item));
         }
         let mut else_branch_template = template.clone();
         remove_i18n_translate_children(&mut else_branch_template);
         let else_branch = Some((branch_position.clone(), else_branch_template));
-        let template_i18n = Element {
-            kind: ElementKind::If {
-                branches,
-                else_branch,
-            },
-            start_tag_location: (branch_position.clone(), branch_position.clone()),
-            close_location: branch_position.clone(),
-            end_tag_location: Some((branch_position.clone(), branch_position)),
-        };
-        template_i18n
+
+        // generate a new node
+        let mut if_block_template = parse_additional_template(r#"<block wx:if="" /><block wx:else="" />"#);
+        let Node::Element(mut if_block) = if_block_template.content.pop().unwrap() else { panic!() };
+        if_block.tag_location.start = (branch_position.clone(), branch_position.clone());
+        if_block.tag_location.close = branch_position.clone();
+        if_block.tag_location.end = Some((branch_position.clone(), branch_position.clone()));
+        let ElementKind::If {
+            branches: new_branches,
+            else_branch: new_else_branch,
+            ..
+        } = &mut if_block.kind else { panic!() };
+        *new_branches = branches;
+        *new_else_branch = else_branch;
+
+        if_block
     }
 
     if contains_i18n_tag(&template.content) {
+        let mut trans_content = OrderedTransContent {
+            map: trans_content.map.into_iter().collect(),
+        };
+        trans_content.map.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+
         // template.content
         let branch_template = remove_i18n_tag(&template.content);
         let template_content_i18n =
@@ -454,10 +476,10 @@ pub fn compile(
         // sub_templates
         for sub_template in &mut template.globals.sub_templates {
             // search_terms(&sub_template.1, &mut output, &included_attributes);
-            let sub_template_branch = sub_template.1.clone();
+            let sub_template_branch = sub_template.content.clone();
             let sub_template_i18n =
                 translate_template(sub_template_branch, &trans_content, &included_attributes);
-            sub_template.1 = vec![Node::Element(sub_template_i18n)]
+            sub_template.content = vec![Node::Element(sub_template_i18n)]
         }
     }
 

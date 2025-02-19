@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, process::ExitCode};
+use std::{path::PathBuf, process::ExitCode};
 
 use clap::{Parser, Subcommand};
 use glass_easel_i18n::*;
@@ -22,7 +22,7 @@ enum Commands {
         /// Path of the tamplate file
         path: PathBuf,
         /// Place holder of the untranslated terms
-        place_holder: String,
+        placeholder: String,
     },
 }
 
@@ -49,20 +49,13 @@ fn main() -> ExitCode {
             let trans_source = match std::fs::read_to_string(&trans_source_path) {
                 Ok(source) => source,
                 Err(err) => {
-                    eprintln!("Failed to read translate source file: {}", err);
+                    eprintln!("Failed to read translate TOML file: {}", err);
                     return ExitCode::FAILURE;
                 }
             };
-            // Usage: test binary
-            let included_attributes: Vec<String> = vec!["title".to_string()];
-            // Call compile as a binary file, convenient for debugging on the rust side
-            match compile(file_name, &source, &trans_source, included_attributes) {
+            match compile(file_name, &source, &trans_source, &[]) {
                 Ok(r) => {
                     println!("{}", r.output);
-                    match fs::write("output.wxml", r.output) {
-                        Ok(()) => println!("output success"),
-                        Err(err) => println!("output fail:{}", err),
-                    }
                 }
                 Err(err) => {
                     eprintln!("{}", err);
@@ -70,7 +63,7 @@ fn main() -> ExitCode {
                 }
             }
         }
-        Commands::Search { path, place_holder } => {
+        Commands::Search { path, placeholder } => {
             let Some(file_name) = path.file_name() else {
                 eprintln!("Not a file");
                 return ExitCode::FAILURE;
@@ -86,21 +79,16 @@ fn main() -> ExitCode {
                     return ExitCode::FAILURE;
                 }
             };
-            // Usage: test binary
-            let included_attributes: Vec<String> = vec!["title".to_string()];
-            match search(file_name, &source, included_attributes) {
+            match search(file_name, &source, &[]) {
                 Ok(untranslated_terms) => {
                     println!("{:#?}", untranslated_terms.output);
                     let mut po_terms = String::new();
                     for term in untranslated_terms.output {
                         let po_term =
-                            format!("msgid \"{}\"\nmsgstr \"{}\"\n\n", term, place_holder);
+                            format!("msgid \"{}\"\nmsgstr \"{}\"\n\n", term, placeholder);
                         po_terms.push_str(&po_term);
                     }
-                    match fs::write("output.po", po_terms) {
-                        Ok(()) => println!("output success"),
-                        Err(err) => println!("output fail:{}", err),
-                    }
+                    println!("{}", po_terms);
                 }
                 Err(err) => {
                     eprintln!("{}", err);

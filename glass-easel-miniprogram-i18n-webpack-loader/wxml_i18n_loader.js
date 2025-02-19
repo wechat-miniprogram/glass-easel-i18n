@@ -13,6 +13,7 @@ function translateWxml(filename, source, translations, attributes) {
 
 async function getPoData(localePath, translations, isGlobal) {
   if (!fs.existsSync(localePath)) {
+    // eslint-disable-next-line no-console
     console.log('Locale files not found: ', localePath)
   } else {
     const localeDir = fs.readdirSync(localePath)
@@ -36,7 +37,7 @@ async function getPoData(localePath, translations, isGlobal) {
         `
         ["${prefix}${locale}"]
         ${Object.entries(data)
-          .map(([key, value]) => `"${key}" = "${value}"`)
+          .map(([key, value]) => `${JSON.stringify(key)} = ${JSON.stringify(value)}`)
           .join('\n')}
         `,
       )

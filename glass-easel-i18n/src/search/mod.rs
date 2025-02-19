@@ -1,9 +1,5 @@
 use super::contains_i18n_translate_children;
-use glass_easel_template_compiler::{
-    parse::expr::Expression,
-    parse::parse,
-    parse::tag::{Attribute, ElementKind, Node, Value},
-};
+use glass_easel_template_compiler::parse::{expr::Expression, parse, tag::{ElementKind, Node, NormalAttribute, Value}};
 
 pub struct UntranslatedTerms {
     pub output: Vec<String>,
@@ -12,7 +8,7 @@ pub struct UntranslatedTerms {
 pub fn search(
     path: &str,
     source: &str,
-    included_attributes: Vec<String>,
+    included_attributes: &[String],
 ) -> Result<UntranslatedTerms, String> {
     // parse the template
     let (template, parse_state) = parse(path, source);
@@ -67,23 +63,26 @@ pub fn search(
                 split_expression(&expression, &mut expr_vec, &mut start_placeholder);
                 terms_vec.push(expr_vec.join(""));
             }
+            _ => {}
         }
     }
     fn collect_attribute_terms(
-        attributes: &Vec<Attribute>,
+        attributes: &Vec<NormalAttribute>,
         terms_vec: &mut Vec<String>,
-        included_attributes: &Vec<String>,
+        included_attributes: &[String],
     ) {
         for attribute in attributes {
             if included_attributes.contains(&attribute.name.name.to_string()) {
-                collect_terms(&attribute.value, terms_vec)
+                if let Some(value) = &attribute.value {
+                    collect_terms(value, terms_vec)
+                }
             }
         }
     }
     fn collect_entire_children(
         node_list: &Vec<Node>,
         terms_vec: &mut Vec<String>,
-        included_attributes: &Vec<String>,
+        included_attributes: &[String],
     ) {
         let mut text_vec: Vec<String> = Vec::new();
         let mut placehoder_char = 'A';
@@ -114,7 +113,7 @@ pub fn search(
     fn search_terms(
         node_list: &Vec<Node>,
         terms_vec: &mut Vec<String>,
-        included_attributes: &Vec<String>,
+        included_attributes: &[String],
     ) {
         for node in node_list {
             match node {
@@ -136,6 +135,7 @@ pub fn search(
                     ElementKind::If {
                         branches,
                         else_branch,
+                        ..
                     } => {
                         for branch in branches {
                             search_terms(&branch.2, terms_vec, included_attributes)
@@ -167,7 +167,7 @@ pub fn search(
 
     // sub_templates
     for sub_template in &template.globals.sub_templates {
-        search_terms(&sub_template.1, &mut output, &included_attributes);
+        search_terms(&sub_template.content, &mut output, &included_attributes);
     }
 
     // splice empty string

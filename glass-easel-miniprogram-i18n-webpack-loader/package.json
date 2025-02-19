@@ -1,7 +1,7 @@
 {
   "name": "glass-easel-miniprogram-i18n-webpack-loader",
   "description": "The webpack plugin of the glass-easel-i18n project (working with glass-easel-miniprogram-webpack-loader)",
-  "version": "0.5.2",
+  "version": "0.12.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/wechat-miniprogram/glass-easel-i18n.git"

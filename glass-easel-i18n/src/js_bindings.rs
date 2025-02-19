@@ -45,7 +45,7 @@ pub fn js_compile(
     trans_source: &str,
     attributes: Vec<String>,
 ) -> JsCompileResult {
-    let r = compile(path, source, trans_source, attributes);
+    let r = compile(path, source, trans_source, &attributes);
     JsCompileResult(r)
 }
 
@@ -73,6 +73,6 @@ impl JsUntranslatedTerms {
 
 #[wasm_bindgen(js_name = "search")]
 pub fn js_search(path: &str, source: &str, attributes: Vec<String>) -> JsUntranslatedTerms {
-    let r = search(path, source, attributes);
+    let r = search(path, source, &attributes);
     JsUntranslatedTerms(r)
 }
